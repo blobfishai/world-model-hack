@@ -1,0 +1,49 @@
+{
+  "tool": "built-in imagegen",
+  "prompts": [
+    {
+      "id": "greenhouse",
+      "prompt": "Use case: stylized-concept. Asset: full-wall environmental artwork for an interactive 3D robotics task room. Generate one wide cinematic 16:9 interior image of a sunlit greenhouse robotics workshop: tall curved glass roof, dense hanging plants, verdant vertical gardens, pale terracotta floor, workbenches for sorting plant pots, a small industrial robot arm, an open clear central working area. Camera at human eye height, straight verticals, wide-angle interior depth, architecture fills frame edge to edge. Beautiful realistic game environment, tactile materials, warm botanical sunlight. This must feel like a place you can walk into. No text, labels, UI, collage, borders or people."
+    },
+    {
+      "id": "kitchen",
+      "prompt": "Use case: stylized-concept. Asset: full-wall environmental artwork for an interactive 3D robotics task room. Primary request: one wide cinematic 16:9 interior image. A beautiful warm Japanese robotics kitchen, blond oak cabinets, cream plaster walls, stone countertop, ceramic bowls, pendant lighting and afternoon window light; a small robot arm at a preparation station. No greenhouse plants. Calm domestic architecture. Camera at human eye height, straight verticals, wide-angle interior depth, architecture fills frame edge to edge, open central floor. Realistic premium game environment with tactile materials. No text, logos, UI, collage, borders or people."
+    },
+    {
+      "id": "warehouse",
+      "prompt": "Use case: stylized-concept. Asset: full-wall environmental artwork for an interactive 3D robotics task room. Primary request: one wide cinematic 16:9 interior image. A vast industrial logistics warehouse at blue hour, orange pallet racks, blue steel beams, concrete floor, cardboard cartons, yellow safety stripes, a robot packing station and overhead strip lights. Strong industrial depth. Camera at human eye height, straight verticals, wide-angle interior depth, architecture fills frame edge to edge, open central floor. Realistic premium game environment with tactile materials. No text, logos, UI, collage, borders or people."
+    },
+    {
+      "id": "orbital",
+      "prompt": "Use case: stylized-concept. Asset: full-wall environmental artwork for an interactive 3D robotics task room. Primary request: one wide cinematic 16:9 interior image. A futuristic orbital robotics laboratory overlooking the earth through a panoramic window, luminous cool-white curved wall ribs, dark graphite floor, cyan instrument lights, modular silver cargo containers and a robot research bench. Distinct science fiction architecture. Camera at human eye height, straight verticals, wide-angle interior depth, architecture fills frame edge to edge, open central floor. Realistic premium game environment with tactile materials. No text, logos, UI, collage, borders or people."
+    },
+    {
+      "id": "ceramics",
+      "prompt": "Use case: stylized-concept. Asset: environmental artwork for an interactive 3D robotics task room. One wide cinematic 16:9 interior image. A terracotta pottery studio with rounded adobe arches, rose plaster, shelves of clay vessels, a kiln, dusty sculpting benches, indigo glazed tiles and golden desert afternoon light; a small robot ceramic handling station. Human eye-height camera, wide-angle interior depth, straight verticals, open center floor, architecture to all frame edges. Realistic premium game environment, tactile materials. No text, logos, UI, collage, borders or people."
+    },
+    {
+      "id": "cleanroom",
+      "prompt": "Use case: stylized-concept. Asset: environmental artwork for an interactive 3D robotics task room. One wide cinematic 16:9 interior image. A clinical bright mint-white semiconductor cleanroom, frosted glass walls, turquoise lab furniture, stainless steel benches, precise circuit components in trays, ring-shaped overhead lighting and a robot assembly station. Cold, pristine architecture. Human eye-height camera, wide-angle interior depth, straight verticals, open center floor, architecture to all frame edges. Realistic premium game environment, tactile materials. No text, logos, UI, collage, borders or people."
+    },
+    {
+      "id": "laundry",
+      "prompt": "Use case: stylized-concept. Asset: environmental artwork for an interactive 3D robotics task room. One wide cinematic 16:9 interior image. A cozy cobalt-blue and white laundry robotics workshop with tiled checkerboard floor, a wall of round washing machines, textile bins, folded fabric stacks, chrome folding tables and a compact robot sorting station. Bright morning light. Human eye-height camera, wide-angle interior depth, straight verticals, open center floor, architecture to all frame edges. Realistic premium game environment, tactile materials. No text, logos, UI, collage, borders or people."
+    },
+    {
+      "id": "underwater",
+      "prompt": "Use case: stylized-concept. Asset: environmental artwork for an interactive 3D robotics task room. One wide cinematic 16:9 interior image. An underwater robotics research station, deep navy circular architecture, huge pressure windows looking into a teal ocean with fish silhouettes, brass fittings, wet-looking dark floor, amber task lights, instrument benches, a small robot sample-handling station. Human eye-height camera, wide-angle interior depth, straight verticals, open center floor, architecture to all frame edges. Realistic premium game environment, tactile materials. No text, logos, UI, collage, borders or people."
+    },
+    {
+      "id": "observatory",
+      "prompt": "Use case: stylized-concept. Asset: environmental artwork for an interactive 3D robotics task room. One wide cinematic 16:9 interior image. A mountain observatory optics workshop beneath an open dome, violet night sky and stars, a large telescope, burgundy workbenches with lens cases, dark wood and brushed brass, cool moonlight and tiny warm task lights, a compact robot optics station. Human eye-height camera, wide-angle interior depth, straight verticals, open center floor, architecture to all frame edges. Realistic premium game environment, tactile materials. No text, logos, UI, collage, borders or people."
+    },
+    {
+      "id": "workshop",
+      "prompt": "Use case: stylized-concept. Asset: environmental artwork for an interactive 3D robotics task room. One wide cinematic 16:9 interior image. A retro automotive robotics workshop, red brick walls, green-painted steel framing, checker plate floor, tool pegboards, red tool chests, disassembled engine parts and a robotic assembly bench, dramatic amber industrial lamps and tall factory windows. Human eye-height camera, wide-angle interior depth, straight verticals, open center floor, architecture to all frame edges. Realistic premium game environment, tactile materials. No text, logos, UI, collage, borders or people."
+    },
+    {
+      "id": "arctic",
+      "prompt": "Use case: stylized-concept. Asset: full-wall environmental artwork for a playable 3D robotics room. One wide cinematic 16:9 image of a remote Arctic robotics repair laboratory: enormous angled windows overlooking pale glacial ice and a snowstorm, insulated ice-blue modular walls, orange expedition equipment, rubberized navy floor, silver tool benches and a small robot sample handling station. Human eye-height camera, wide-angle interior depth, open central floor, realistic premium game environment, tactile frosted glass, cold diffuse daylight and warm work lamps. No text, UI, people, logos, collage or borders."
+    }
+  ]
+}

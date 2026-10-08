@@ -1,0 +1,12 @@
+{
+  "model": "reactor/lingbot-world-2",
+  "prompt": "Photorealistic first-person exploration of Cargo Hall, a full-scale robotics training facility. Tall steel racks, shipping crates, and blue-hour windows. The room contains a real seven-joint white and black Franka Panda robot arm bolted to a substantial workbench, a parallel two-finger gripper, and a parcel ready for manipulation. The articulated robot has rounded cast-metal link housings, visible joints, cables, rubber fingertips, and realistic proportions. Detailed working equipment, physically plausible materials, subtle wear, glass reflections, natural indirect light, contact shadows, consistent scale and camera parallax. Keep the room and all objects coherent as the viewer moves. Continuous eye-level camera, no cuts, no text, no UI, no flat image walls or low-poly scenery.",
+  "seed": 202,
+  "source": "/robot-worlds/warehouse.png",
+  "video": "/robot-worlds/generated/warehouse.mp4",
+  "poster": "/robot-worlds/generated/warehouse.jpg",
+  "frames": 520,
+  "sha256": "e2d70241ebdf325103a80e59aea90b2037820cd129368a759bd6b78dd6ed3450",
+  "generated_at": "2026-10-08T17:58:19.622552+00:00",
+  "format": "Interactive world-model video; no mesh or robot dynamics are returned by Reactor."
+}

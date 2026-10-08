@@ -1,0 +1,62 @@
+{
+  "created_at": "2026-10-08T17:32:36.515Z",
+  "model": "reactor/sana-streaming",
+  "source_transport": "live browser canvas video track",
+  "scene_sha256": "37217b8df37acc338675a7cd6211c10be76b900524ce497c010449b40c691556",
+  "task": "lift:ceramic_mug",
+  "controller": "scripted, not learned PPO",
+  "seed": 42,
+  "physics_result": {
+    "is_success": true,
+    "steps": 87,
+    "two_finger_contact": true
+  },
+  "generation_check": {
+    "width": 1280,
+    "height": 704,
+    "received_seconds": 10.872154,
+    "source": "live MuJoCo robot canvas",
+    "model": "reactor/sana-streaming",
+    "prompt": "Photorealistic kitchen countertop with ceramic bowls, plates, a mug, a green dish soap bottle and a blue two-finger robot gripper. Warm daylight, realistic ceramic and metal textures. Preserve the source camera, the exact positions and shapes, and the robot's movement. Keep the gripper clearly visible. Do not add objects."
+  },
+  "output": {
+    "file": "reactor-mug-lift.mp4",
+    "sha256": "1e2a23026ebba7b3a4a59eb86a340890a8e226e7f6b255b9d7de5eaf8f8f9c6b",
+    "video": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1280,
+          "height": 704,
+          "nb_frames": "223"
+        }
+      ],
+      "format": {
+        "duration": "9.291667",
+        "size": "503372"
+      }
+    }
+  },
+  "reference_rollout": {
+    "file": "mug-lift-source.mp4",
+    "sha256": "bacc236c092e76e0822485aac00c861192ab266691756649f5dc4c65026c5ec7",
+    "video": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1280,
+          "height": 704,
+          "nb_frames": "198"
+        }
+      ],
+      "format": {
+        "duration": "8.250000",
+        "size": "153245"
+      }
+    }
+  },
+  "reference_note": "Separate recording of the same seeded scripted rollout. Timing is not aligned with the generated output.",
+  "visual_review": "Reactor changes lighting and materials and can alter object details. Grasp success is measured by MuJoCo; generated pixels are not a physical validation."
+}

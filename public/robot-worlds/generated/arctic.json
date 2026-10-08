@@ -1,0 +1,12 @@
+{
+  "model": "reactor/lingbot-world-2",
+  "prompt": "Photorealistic first-person exploration of Polar Research, a full-scale robotics training facility. Glacial windows, icy blue panels, and orange expedition cases. The room contains a real seven-joint white and black Franka Panda robot arm bolted to a substantial workbench, a parallel two-finger gripper, and a expedition sample ready for manipulation. The articulated robot has rounded cast-metal link housings, visible joints, cables, rubber fingertips, and realistic proportions. Detailed working equipment, physically plausible materials, subtle wear, glass reflections, natural indirect light, contact shadows, consistent scale and camera parallax. Keep the room and all objects coherent as the viewer moves. Continuous eye-level camera, no cuts, no text, no UI, no flat image walls or low-poly scenery.",
+  "seed": 210,
+  "source": "/robot-worlds/arctic.png",
+  "video": "/robot-worlds/generated/arctic.mp4",
+  "poster": "/robot-worlds/generated/arctic.jpg",
+  "frames": 496,
+  "sha256": "da9a1f70ffaa9e0f8527e75b905ee81e8e77cb12165c3023f255c93ca11933f4",
+  "generated_at": "2026-10-08T18:04:57.421313+00:00",
+  "format": "Interactive world-model video; no mesh or robot dynamics are returned by Reactor."
+}

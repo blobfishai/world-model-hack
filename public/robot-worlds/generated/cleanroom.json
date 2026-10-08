@@ -1,0 +1,12 @@
+{
+  "model": "reactor/lingbot-world-2",
+  "prompt": "Photorealistic first-person exploration of Precision Lab, a full-scale robotics training facility. Frosted glass and mint-white semiconductor benches. The room contains a real seven-joint white and black Franka Panda robot arm bolted to a substantial workbench, a parallel two-finger gripper, and a component case ready for manipulation. The articulated robot has rounded cast-metal link housings, visible joints, cables, rubber fingertips, and realistic proportions. Detailed working equipment, physically plausible materials, subtle wear, glass reflections, natural indirect light, contact shadows, consistent scale and camera parallax. Keep the room and all objects coherent as the viewer moves. Continuous eye-level camera, no cuts, no text, no UI, no flat image walls or low-poly scenery.",
+  "seed": 205,
+  "source": "/robot-worlds/cleanroom.png",
+  "video": "/robot-worlds/generated/cleanroom.mp4",
+  "poster": "/robot-worlds/generated/cleanroom.jpg",
+  "frames": 374,
+  "sha256": "c573896ba578c862b85c98602483a33023782eb5df1b35c1484b982773832410",
+  "generated_at": "2026-10-08T18:12:35.395168+00:00",
+  "format": "Interactive world-model video; no mesh or robot dynamics are returned by Reactor."
+}

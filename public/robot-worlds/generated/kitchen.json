@@ -1,0 +1,12 @@
+{
+  "model": "reactor/lingbot-world-2",
+  "prompt": "Photorealistic first-person exploration of Sunday Kitchen, a full-scale robotics training facility. Oak joinery, stone counters, and soft afternoon light. The room contains a real seven-joint white and black Franka Panda robot arm bolted to a substantial workbench, a parallel two-finger gripper, and a ceramic block ready for manipulation. The articulated robot has rounded cast-metal link housings, visible joints, cables, rubber fingertips, and realistic proportions. Detailed working equipment, physically plausible materials, subtle wear, glass reflections, natural indirect light, contact shadows, consistent scale and camera parallax. Keep the room and all objects coherent as the viewer moves. Continuous eye-level camera, no cuts, no text, no UI, no flat image walls or low-poly scenery.",
+  "seed": 201,
+  "source": "/robot-worlds/kitchen.png",
+  "video": "/robot-worlds/generated/kitchen.mp4",
+  "poster": "/robot-worlds/generated/kitchen.jpg",
+  "frames": 517,
+  "sha256": "4266f065af57bfd7d2d61ce1e11f9b8a74616312b358fa2282e56135abc3fab5",
+  "generated_at": "2026-10-08T17:57:57.060463+00:00",
+  "format": "Interactive world-model video; no mesh or robot dynamics are returned by Reactor."
+}

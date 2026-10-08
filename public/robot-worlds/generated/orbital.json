@@ -1,0 +1,12 @@
+{
+  "model": "reactor/lingbot-world-2",
+  "prompt": "Photorealistic first-person exploration of Orbital Station, a full-scale robotics training facility. Curved pressure ribs and a view of the Earth. The room contains a real seven-joint white and black Franka Panda robot arm bolted to a substantial workbench, a parallel two-finger gripper, and a power cell ready for manipulation. The articulated robot has rounded cast-metal link housings, visible joints, cables, rubber fingertips, and realistic proportions. Detailed working equipment, physically plausible materials, subtle wear, glass reflections, natural indirect light, contact shadows, consistent scale and camera parallax. Keep the room and all objects coherent as the viewer moves. Continuous eye-level camera, no cuts, no text, no UI, no flat image walls or low-poly scenery.",
+  "seed": 203,
+  "source": "/robot-worlds/orbital.png",
+  "video": "/robot-worlds/generated/orbital.mp4",
+  "poster": "/robot-worlds/generated/orbital.jpg",
+  "frames": 416,
+  "sha256": "2bf399de9832b7bc617a81836082a3bee8db5926064b98827990e5638c71be29",
+  "generated_at": "2026-10-08T18:00:52.720476+00:00",
+  "format": "Interactive world-model video; no mesh or robot dynamics are returned by Reactor."
+}

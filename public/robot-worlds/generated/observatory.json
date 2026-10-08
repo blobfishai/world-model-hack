@@ -1,0 +1,12 @@
+{
+  "model": "reactor/lingbot-world-2",
+  "prompt": "Photorealistic first-person exploration of Night Observatory, a full-scale robotics training facility. An open dome, violet stars, and brass optics benches. The room contains a real seven-joint white and black Franka Panda robot arm bolted to a substantial workbench, a parallel two-finger gripper, and a lens case ready for manipulation. The articulated robot has rounded cast-metal link housings, visible joints, cables, rubber fingertips, and realistic proportions. Detailed working equipment, physically plausible materials, subtle wear, glass reflections, natural indirect light, contact shadows, consistent scale and camera parallax. Keep the room and all objects coherent as the viewer moves. Continuous eye-level camera, no cuts, no text, no UI, no flat image walls or low-poly scenery.",
+  "seed": 208,
+  "source": "/robot-worlds/observatory.png",
+  "video": "/robot-worlds/generated/observatory.mp4",
+  "poster": "/robot-worlds/generated/observatory.jpg",
+  "frames": 470,
+  "sha256": "26943b5d3bf549b2dca62a30dedf89308969d82b7c2bed74f00a72e775c7453d",
+  "generated_at": "2026-10-08T18:13:23.002566+00:00",
+  "format": "Interactive world-model video; no mesh or robot dynamics are returned by Reactor."
+}

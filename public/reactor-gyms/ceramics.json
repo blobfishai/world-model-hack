@@ -1,0 +1,217 @@
+{
+  "theme": "ceramics",
+  "status": "ready",
+  "prompt": "Photorealistic first-person exploration of Kiln & Clay, a full-scale robotics training facility. Adobe arches, indigo tile, and the glow of a pottery kiln. The room contains a real seven-joint white and black Franka Panda robot arm bolted to a substantial workbench, a parallel two-finger gripper, and a clay vessel ready for manipulation. The articulated robot has rounded cast-metal link housings, visible joints, cables, rubber fingertips, and realistic proportions. Detailed working equipment, physically plausible materials, subtle wear, glass reflections, natural indirect light, contact shadows, consistent scale and camera parallax. Keep the room and all objects coherent as the viewer moves. Continuous eye-level camera, no cuts, no text, no UI, no flat image walls or low-poly scenery.",
+  "seed_source": "reference",
+  "source_recording": null,
+  "seed_reference": {
+    "path": "public/robot-worlds/ceramics.png",
+    "tool": "built-in imagegen",
+    "sha256": "4966b038494961b3bb93c9b7ad298eb06e2a42739ae9ef6e2329256b3375f2e3"
+  },
+  "walk_generation": {
+    "model": "reactor/lingbot-world-2",
+    "session_id": "92c49cec-9c9e-4b54-a184-54dd28a5c049",
+    "seed": 204,
+    "prompt": "Photorealistic first-person exploration of Kiln & Clay, a full-scale robotics training facility. Adobe arches, indigo tile, and the glow of a pottery kiln. The room contains a real seven-joint white and black Franka Panda robot arm bolted to a substantial workbench, a parallel two-finger gripper, and a clay vessel ready for manipulation. The articulated robot has rounded cast-metal link housings, visible joints, cables, rubber fingertips, and realistic proportions. Detailed working equipment, physically plausible materials, subtle wear, glass reflections, natural indirect light, contact shadows, consistent scale and camera parallax. Keep the room and all objects coherent as the viewer moves. Continuous eye-level camera, no cuts, no text, no UI, no flat image walls or low-poly scenery.",
+    "path": "/Users/samuelchien/dev/world-model-hack/.task-rooms/world-generation/ceramics/native.mp4",
+    "sha256": "b28aafaff3c90df3406749fdc1981df3ebc0024e873ca95cd868bace99c26362",
+    "received_frames": 448,
+    "elapsed_seconds": 26.742,
+    "video": {
+      "duration_seconds": 9.333333,
+      "width": 1664,
+      "height": 960,
+      "frames": 448,
+      "fps": 48.0
+    },
+    "chunks": [
+      {
+        "index": 0.0,
+        "action": "still",
+        "frames": 17,
+        "received": 0
+      },
+      {
+        "index": 1.0,
+        "action": "still",
+        "frames": 24,
+        "received": 13
+      },
+      {
+        "index": 2.0,
+        "action": "still",
+        "frames": 24,
+        "received": 27
+      },
+      {
+        "index": 3.0,
+        "action": "still",
+        "frames": 24,
+        "received": 54
+      },
+      {
+        "index": 4.0,
+        "action": "w",
+        "frames": 24,
+        "received": 78
+      },
+      {
+        "index": 5.0,
+        "action": "w",
+        "frames": 24,
+        "received": 104
+      },
+      {
+        "index": 6.0,
+        "action": "w",
+        "frames": 24,
+        "received": 132
+      },
+      {
+        "index": 7.0,
+        "action": "w",
+        "frames": 24,
+        "received": 159
+      },
+      {
+        "index": 8.0,
+        "action": "w",
+        "frames": 24,
+        "received": 180
+      },
+      {
+        "index": 9.0,
+        "action": "still",
+        "frames": 24,
+        "received": 204
+      },
+      {
+        "index": 10.0,
+        "action": "left",
+        "frames": 24,
+        "received": 229
+      },
+      {
+        "index": 11.0,
+        "action": "left",
+        "frames": 24,
+        "received": 255
+      },
+      {
+        "index": 12.0,
+        "action": "left",
+        "frames": 24,
+        "received": 275
+      },
+      {
+        "index": 13.0,
+        "action": "right",
+        "frames": 24,
+        "received": 302
+      },
+      {
+        "index": 14.0,
+        "action": "right",
+        "frames": 24,
+        "received": 320
+      },
+      {
+        "index": 15.0,
+        "action": "right",
+        "frames": 24,
+        "received": 350
+      },
+      {
+        "index": 16.0,
+        "action": "right",
+        "frames": 24,
+        "received": 376
+      },
+      {
+        "index": 17.0,
+        "action": "still",
+        "frames": 24,
+        "received": 392
+      },
+      {
+        "index": 18.0,
+        "action": "still",
+        "frames": 24,
+        "received": 423
+      }
+    ],
+    "segments": [
+      {
+        "label": "settle",
+        "seconds": 1.5,
+        "start_frame": 1,
+        "start_seconds": 12.72,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "walk_forward",
+        "seconds": 2.5,
+        "start_frame": 54,
+        "start_seconds": 14.327,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "forward",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "look_left",
+        "seconds": 1.5,
+        "start_frame": 204,
+        "start_seconds": 18.429,
+        "rotation_speed_deg": 1.5,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "left",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "look_right",
+        "seconds": 1.5,
+        "start_frame": 275,
+        "start_seconds": 20.233,
+        "rotation_speed_deg": 1.5,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "right",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "end",
+        "seconds": 0.8,
+        "start_frame": 376,
+        "start_seconds": 22.742,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      }
+    ],
+    "arrival_frame": null,
+    "walk_in_end_seconds": null
+  },
+  "video_sha256": "88198700914fb274dbe48986d2e3c03c570e103c039680d6beedfee5e08c7b2b",
+  "image_sha256": "8f63be8deab8820d5eba605948908937ba41363b162ee89ba50e8a98584976c9",
+  "imported_from": ".task-rooms/world-generation/ceramics/receipt.json",
+  "review": {
+    "reviewed_at": "2026-10-08T18:12:44.500484+00:00",
+    "method": "Visual review of four timestamped frames",
+    "scope": "Generated room preview only",
+    "notes": "Adobe pottery studio and workbench retain their style; robot identity is unverified.",
+    "task_success_verified": false,
+    "geometry_reconstructed": false
+  },
+  "geometry": "Reactor returned generated video, not meshes or MJCF.",
+  "task_validation": "Visual experiment, not verified robot contacts."
+}

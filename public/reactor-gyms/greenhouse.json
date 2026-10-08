@@ -1,0 +1,229 @@
+{
+  "theme": "greenhouse",
+  "status": "ready",
+  "prompt": "Photorealistic first-person exploration of The Glasshouse, a full-scale robotics training facility. Sunlit glass, hanging gardens, and terracotta workbenches. The room contains a real seven-joint white and black Franka Panda robot arm bolted to a substantial workbench, a parallel two-finger gripper, and a seedling pot ready for manipulation. The articulated robot has rounded cast-metal link housings, visible joints, cables, rubber fingertips, and realistic proportions. Detailed working equipment, physically plausible materials, subtle wear, glass reflections, natural indirect light, contact shadows, consistent scale and camera parallax. Keep the room and all objects coherent as the viewer moves. Continuous eye-level camera, no cuts, no text, no UI, no flat image walls or low-poly scenery.",
+  "seed_source": "reference",
+  "source_recording": null,
+  "seed_reference": {
+    "path": "public/robot-worlds/greenhouse.png",
+    "tool": "built-in imagegen",
+    "sha256": "208d61593c6a6ae889c4d11899781bf7349c88b0ec556a7fcbb654345185427d"
+  },
+  "walk_generation": {
+    "model": "reactor/lingbot-world-2",
+    "session_id": "513e71f6-5d82-4c68-ac78-0bf54e044ef1",
+    "seed": 200,
+    "prompt": "Photorealistic first-person exploration of The Glasshouse, a full-scale robotics training facility. Sunlit glass, hanging gardens, and terracotta workbenches. The room contains a real seven-joint white and black Franka Panda robot arm bolted to a substantial workbench, a parallel two-finger gripper, and a seedling pot ready for manipulation. The articulated robot has rounded cast-metal link housings, visible joints, cables, rubber fingertips, and realistic proportions. Detailed working equipment, physically plausible materials, subtle wear, glass reflections, natural indirect light, contact shadows, consistent scale and camera parallax. Keep the room and all objects coherent as the viewer moves. Continuous eye-level camera, no cuts, no text, no UI, no flat image walls or low-poly scenery.",
+    "path": "/Users/samuelchien/dev/world-model-hack/.task-rooms/world-generation/greenhouse/native.mp4",
+    "sha256": "e00631b0f7af8d157f5e45511d713bef26c0308fdd05dbc7c610746095527e7f",
+    "received_frames": 495,
+    "elapsed_seconds": 25.791,
+    "video": {
+      "duration_seconds": 10.3125,
+      "width": 1664,
+      "height": 960,
+      "frames": 495,
+      "fps": 48.0
+    },
+    "chunks": [
+      {
+        "index": 0.0,
+        "action": "still",
+        "frames": 17,
+        "received": 0
+      },
+      {
+        "index": 1.0,
+        "action": "still",
+        "frames": 24,
+        "received": 9
+      },
+      {
+        "index": 2.0,
+        "action": "still",
+        "frames": 24,
+        "received": 26
+      },
+      {
+        "index": 3.0,
+        "action": "still",
+        "frames": 24,
+        "received": 50
+      },
+      {
+        "index": 4.0,
+        "action": "still",
+        "frames": 24,
+        "received": 76
+      },
+      {
+        "index": 5.0,
+        "action": "w",
+        "frames": 24,
+        "received": 99
+      },
+      {
+        "index": 6.0,
+        "action": "w",
+        "frames": 24,
+        "received": 132
+      },
+      {
+        "index": 7.0,
+        "action": "w",
+        "frames": 24,
+        "received": 154
+      },
+      {
+        "index": 8.0,
+        "action": "w",
+        "frames": 24,
+        "received": 181
+      },
+      {
+        "index": 9.0,
+        "action": "w",
+        "frames": 24,
+        "received": 202
+      },
+      {
+        "index": 10.0,
+        "action": "w",
+        "frames": 24,
+        "received": 228
+      },
+      {
+        "index": 11.0,
+        "action": "still",
+        "frames": 24,
+        "received": 246
+      },
+      {
+        "index": 12.0,
+        "action": "left",
+        "frames": 24,
+        "received": 279
+      },
+      {
+        "index": 13.0,
+        "action": "left",
+        "frames": 24,
+        "received": 302
+      },
+      {
+        "index": 14.0,
+        "action": "left",
+        "frames": 24,
+        "received": 321
+      },
+      {
+        "index": 15.0,
+        "action": "right",
+        "frames": 24,
+        "received": 348
+      },
+      {
+        "index": 16.0,
+        "action": "right",
+        "frames": 24,
+        "received": 370
+      },
+      {
+        "index": 17.0,
+        "action": "right",
+        "frames": 24,
+        "received": 396
+      },
+      {
+        "index": 18.0,
+        "action": "right",
+        "frames": 24,
+        "received": 418
+      },
+      {
+        "index": 19.0,
+        "action": "still",
+        "frames": 24,
+        "received": 442
+      },
+      {
+        "index": 20.0,
+        "action": "still",
+        "frames": 24,
+        "received": 465
+      }
+    ],
+    "segments": [
+      {
+        "label": "settle",
+        "seconds": 1.5,
+        "start_frame": 1,
+        "start_seconds": 11.86,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "walk_forward",
+        "seconds": 2.5,
+        "start_frame": 76,
+        "start_seconds": 13.958,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "forward",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "look_left",
+        "seconds": 1.5,
+        "start_frame": 246,
+        "start_seconds": 18.058,
+        "rotation_speed_deg": 1.5,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "left",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "look_right",
+        "seconds": 1.5,
+        "start_frame": 321,
+        "start_seconds": 19.769,
+        "rotation_speed_deg": 1.5,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "right",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "end",
+        "seconds": 0.8,
+        "start_frame": 418,
+        "start_seconds": 22.008,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      }
+    ],
+    "arrival_frame": null,
+    "walk_in_end_seconds": null
+  },
+  "video_sha256": "79812621ea7a38cfb2ae2b6c9b74a0e2a5747ee5bd5f49a3a43ceb84289c0674",
+  "image_sha256": "29307bc5fc5967644bf0c86b706a0ad12245ef9753bee7bf9e0c10df72a59e72",
+  "imported_from": ".task-rooms/world-generation/greenhouse/receipt.json",
+  "review": {
+    "reviewed_at": "2026-10-08T18:12:44.438300+00:00",
+    "method": "Visual review of four timestamped frames",
+    "scope": "Generated room preview only",
+    "notes": "Glazed greenhouse, planted benches and right-side robot stay recognizable.",
+    "task_success_verified": false,
+    "geometry_reconstructed": false
+  },
+  "geometry": "Reactor returned generated video, not meshes or MJCF.",
+  "task_validation": "Visual experiment, not verified robot contacts."
+}

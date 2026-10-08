@@ -1,0 +1,12 @@
+{
+  "model": "reactor/lingbot-world-2",
+  "prompt": "Photorealistic first-person exploration of The Glasshouse, a full-scale robotics training facility. Sunlit glass, hanging gardens, and terracotta workbenches. The room contains a real seven-joint white and black Franka Panda robot arm bolted to a substantial workbench, a parallel two-finger gripper, and a seedling pot ready for manipulation. The articulated robot has rounded cast-metal link housings, visible joints, cables, rubber fingertips, and realistic proportions. Detailed working equipment, physically plausible materials, subtle wear, glass reflections, natural indirect light, contact shadows, consistent scale and camera parallax. Keep the room and all objects coherent as the viewer moves. Continuous eye-level camera, no cuts, no text, no UI, no flat image walls or low-poly scenery.",
+  "seed": 200,
+  "source": "/robot-worlds/greenhouse.png",
+  "video": "/robot-worlds/generated/greenhouse.mp4",
+  "poster": "/robot-worlds/generated/greenhouse.jpg",
+  "frames": 495,
+  "sha256": "79812621ea7a38cfb2ae2b6c9b74a0e2a5747ee5bd5f49a3a43ceb84289c0674",
+  "generated_at": "2026-10-08T18:00:25.616646+00:00",
+  "format": "Interactive world-model video; no mesh or robot dynamics are returned by Reactor."
+}

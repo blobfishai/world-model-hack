@@ -1,0 +1,229 @@
+{
+  "theme": "arctic",
+  "status": "ready",
+  "prompt": "Photorealistic first-person exploration of Polar Research, a full-scale robotics training facility. Glacial windows, icy blue panels, and orange expedition cases. The room contains a real seven-joint white and black Franka Panda robot arm bolted to a substantial workbench, a parallel two-finger gripper, and a expedition sample ready for manipulation. The articulated robot has rounded cast-metal link housings, visible joints, cables, rubber fingertips, and realistic proportions. Detailed working equipment, physically plausible materials, subtle wear, glass reflections, natural indirect light, contact shadows, consistent scale and camera parallax. Keep the room and all objects coherent as the viewer moves. Continuous eye-level camera, no cuts, no text, no UI, no flat image walls or low-poly scenery.",
+  "seed_source": "reference",
+  "source_recording": null,
+  "seed_reference": {
+    "path": "public/robot-worlds/arctic.png",
+    "tool": "built-in imagegen",
+    "sha256": "3557226e5e9c4b11602a705af37b0f57be0ef4a2138af3f2e0bd7a827e90a261"
+  },
+  "walk_generation": {
+    "model": "reactor/lingbot-world-2",
+    "session_id": "9fb03ceb-3bb6-4b13-b0b5-bd51e2e3c79c",
+    "seed": 210,
+    "prompt": "Photorealistic first-person exploration of Polar Research, a full-scale robotics training facility. Glacial windows, icy blue panels, and orange expedition cases. The room contains a real seven-joint white and black Franka Panda robot arm bolted to a substantial workbench, a parallel two-finger gripper, and a expedition sample ready for manipulation. The articulated robot has rounded cast-metal link housings, visible joints, cables, rubber fingertips, and realistic proportions. Detailed working equipment, physically plausible materials, subtle wear, glass reflections, natural indirect light, contact shadows, consistent scale and camera parallax. Keep the room and all objects coherent as the viewer moves. Continuous eye-level camera, no cuts, no text, no UI, no flat image walls or low-poly scenery.",
+    "path": "/Users/samuelchien/dev/world-model-hack/.task-rooms/world-generation/arctic/native.mp4",
+    "sha256": "de2206e27e0cd2a8b9f27be7239984f7cc824e286117affdf2735d38c49b686b",
+    "received_frames": 496,
+    "elapsed_seconds": 24.783,
+    "video": {
+      "duration_seconds": 10.333333,
+      "width": 1664,
+      "height": 960,
+      "frames": 496,
+      "fps": 48.0
+    },
+    "chunks": [
+      {
+        "index": 0.0,
+        "action": "still",
+        "frames": 17,
+        "received": 0
+      },
+      {
+        "index": 1.0,
+        "action": "still",
+        "frames": 24,
+        "received": 10
+      },
+      {
+        "index": 2.0,
+        "action": "still",
+        "frames": 24,
+        "received": 27
+      },
+      {
+        "index": 3.0,
+        "action": "still",
+        "frames": 24,
+        "received": 50
+      },
+      {
+        "index": 4.0,
+        "action": "w",
+        "frames": 24,
+        "received": 75
+      },
+      {
+        "index": 5.0,
+        "action": "w",
+        "frames": 24,
+        "received": 101
+      },
+      {
+        "index": 6.0,
+        "action": "w",
+        "frames": 24,
+        "received": 132
+      },
+      {
+        "index": 7.0,
+        "action": "w",
+        "frames": 24,
+        "received": 156
+      },
+      {
+        "index": 8.0,
+        "action": "w",
+        "frames": 24,
+        "received": 180
+      },
+      {
+        "index": 9.0,
+        "action": "w",
+        "frames": 24,
+        "received": 205
+      },
+      {
+        "index": 10.0,
+        "action": "still",
+        "frames": 24,
+        "received": 226
+      },
+      {
+        "index": 11.0,
+        "action": "left",
+        "frames": 24,
+        "received": 256
+      },
+      {
+        "index": 12.0,
+        "action": "left",
+        "frames": 24,
+        "received": 278
+      },
+      {
+        "index": 13.0,
+        "action": "left",
+        "frames": 24,
+        "received": 301
+      },
+      {
+        "index": 14.0,
+        "action": "right",
+        "frames": 24,
+        "received": 325
+      },
+      {
+        "index": 15.0,
+        "action": "right",
+        "frames": 24,
+        "received": 350
+      },
+      {
+        "index": 16.0,
+        "action": "right",
+        "frames": 24,
+        "received": 374
+      },
+      {
+        "index": 17.0,
+        "action": "right",
+        "frames": 24,
+        "received": 397
+      },
+      {
+        "index": 18.0,
+        "action": "right",
+        "frames": 24,
+        "received": 421
+      },
+      {
+        "index": 19.0,
+        "action": "still",
+        "frames": 24,
+        "received": 441
+      },
+      {
+        "index": 20.0,
+        "action": "still",
+        "frames": 24,
+        "received": 469
+      }
+    ],
+    "segments": [
+      {
+        "label": "settle",
+        "seconds": 1.5,
+        "start_frame": 1,
+        "start_seconds": 11.548,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "walk_forward",
+        "seconds": 2.5,
+        "start_frame": 58,
+        "start_seconds": 13.13,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "forward",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "look_left",
+        "seconds": 1.5,
+        "start_frame": 226,
+        "start_seconds": 17.005,
+        "rotation_speed_deg": 1.5,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "left",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "look_right",
+        "seconds": 1.5,
+        "start_frame": 301,
+        "start_seconds": 18.589,
+        "rotation_speed_deg": 1.5,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "right",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "end",
+        "seconds": 0.8,
+        "start_frame": 421,
+        "start_seconds": 21.196,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      }
+    ],
+    "arrival_frame": null,
+    "walk_in_end_seconds": null
+  },
+  "video_sha256": "da9a1f70ffaa9e0f8527e75b905ee81e8e77cb12165c3023f255c93ca11933f4",
+  "image_sha256": "a299dce5bb381f0012328663a756573b48ceb438bfbbad03f4334063ea9623d5",
+  "imported_from": ".task-rooms/world-generation/arctic/receipt.json",
+  "review": {
+    "reviewed_at": "2026-10-08T18:12:44.577492+00:00",
+    "method": "Visual review of four timestamped frames",
+    "scope": "Generated room preview only",
+    "notes": "Polar lab, glacial window and robot station stay recognizable; contacts are unverified.",
+    "task_success_verified": false,
+    "geometry_reconstructed": false
+  },
+  "geometry": "Reactor returned generated video, not meshes or MJCF.",
+  "task_validation": "Visual experiment, not verified robot contacts."
+}

@@ -8,3 +8,28 @@
 
 # macOS metadata
 .DS_Store
+/.env
+
+# Node.js and Next.js
+node_modules/
+/.next/
+/out/
+*.tsbuildinfo
+*.log
+
+# Task-room runtime and Python tooling
+/.task-rooms/
+/.venv/
+/.pytest_cache/
+__pycache__/
+*.pyc
+
+# Browser verification artifacts
+/test-results/
+/playwright-report/
+/.next-rooms-explorer/
+/.next-robot-worlds/
+/.next-play/
+/.next-play-tests/
+/.next-play-build/
+.next-more-reactor/

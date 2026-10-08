@@ -1,0 +1,56 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".next-more-reactor/types/**/*.ts",
+    ".next-play-build/types/**/*.ts",
+    ".next-play-tests/types/**/*.ts",
+    ".next-play/types/**/*.ts",
+    ".next-robot-worlds/types/**/*.ts",
+    ".next-rooms-explorer/types/**/*.ts",
+    ".next/types/**/*.ts",
+    ".task-rooms/next-reactor-gym-dev/types/**/*.ts",
+    ".task-rooms/next-reactor-gym-final/types/**/*.ts",
+    ".task-rooms/next-reactor-gym-release-v2/types/**/*.ts",
+    ".task-rooms/next-reactor-gym-release-v3/types/**/*.ts",
+    ".task-rooms/next-reactor-gym-release/types/**/*.ts",
+    ".task-rooms/next-reactor-quota-fix/types/**/*.ts",
+    ".task-rooms/next-robot-worlds-build/types/**/*.ts",
+    ".task-rooms/next-robot-worlds-release/types/**/*.ts",
+    ".task-rooms/next-world-test/types/**/*.ts",
+    "next-env.d.ts",
+    ".task-rooms/next-reactor-sdp-fix/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

@@ -1,0 +1,44 @@
+[project]
+name = "task-rooms"
+version = "0.1.0"
+description = "Video-grounded task rooms and robot training environments"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "certifi==2026.7.22",
+  "fastapi>=0.143.0",
+  "google-genai==2.29.0",
+  "gymnasium>=1.2,<2",
+  "mujoco==3.15.0",
+  "numpy>=2.5.3",
+  "pillow==12.3.0",
+  "pydantic==2.14.0",
+  "python-dotenv==1.2.4",
+  "python-multipart>=0.0.32",
+  "reactor-sdk==1.9.0",
+  "uvicorn[standard]>=0.54.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest==9.1.1"]
+data = ["pyarrow>=19,<24"]
+train = ["stable-baselines3>=2.7,<3"]
+playground = ["playground==0.2.0"]
+
+[project.scripts]
+rooms-reactor-probe = "task_rooms.probe:main"
+rooms-server = "room_sim.api:main"
+rooms-gym = "room_sim.gym_cli:main"
+rooms-train = "room_sim.training:main"
+task-world-prepare = "room_sim.world_media:main"
+reactor-world = "reactor_world.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["server/task_rooms", "server/room_sim", "server/reactor_world"]
+
+[tool.pytest.ini_options]
+pythonpath = ["server"]
+testpaths = ["tests"]

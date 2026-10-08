@@ -1,0 +1,255 @@
+{
+  "theme": "warehouse",
+  "status": "ready",
+  "prompt": "Photorealistic Cargo Hall robot workcell. Tall steel racks, shipping crates, and blue-hour windows. Exactly one white Franka Panda seven-joint industrial robot arm with black circular joint covers, two parallel metal fingers, visible cabling and a bolted base on the right side of a workbench. Exactly one parcel on the workbench in front of the fingers and one shallow receiving tray. Detailed physical materials, natural shadows, worn edges and reflections, documentary realism.",
+  "seed_source": "reference",
+  "source_recording": null,
+  "geometry": "No geometry is returned by the hosted Reactor video API.",
+  "task_validation": "Visual experiment; robot action and contacts are not physics measurements.",
+  "attribution": "Eidon AI / Solidic Labs Inc \u00b7 Egocentric POV \u00b7 CC-BY-4.0",
+  "updated_at": "2026-10-08T18:02:43.282722+00:00",
+  "seed_reference": {
+    "path": "public/robot-worlds/warehouse.png",
+    "tool": "built-in imagegen",
+    "sha256": "898618e2b3ab5b5faac4fc722b15404d5c5634d5f5ac5c104115c900406eeb40"
+  },
+  "image_sha256": "7b62a4a97eba4e7181349529d64a6693441530981fd56d08aa9ba8d7605cfc40",
+  "message": "Reactor navigable world recorded",
+  "walk_generation": {
+    "model": "reactor/lingbot-world-2",
+    "session_id": "130d8e07-43db-476a-9106-d21e90c8d5fa",
+    "seed": 1902,
+    "prompt": "Photorealistic Cargo Hall robot workcell. Tall steel racks, shipping crates, and blue-hour windows. Exactly one white Franka Panda seven-joint industrial robot arm with black circular joint covers, two parallel metal fingers, visible cabling and a bolted base on the right side of a workbench. Exactly one parcel on the workbench in front of the fingers and one shallow receiving tray. Detailed physical materials, natural shadows, worn edges and reflections, documentary realism. First-person observer at standing eye level. The robot stays at its fixed bolted base; its gripper rests above the task object. The observer walks only while movement input is held and looks around only while look input is held. At idle the camera holds still. Continuous view with consistent room layout and robot identity.",
+    "path": "/Users/samuelchien/dev/world-model-hack/.task-rooms/reactor-gyms/warehouse/scan.mp4",
+    "sha256": "979376ba8b7a79a2b664ee8759ae4ab814e715b9b9f3abc86a4e902390840cbf",
+    "received_frames": 542,
+    "elapsed_seconds": 19.013,
+    "video": {
+      "duration_seconds": 11.291667,
+      "width": 1664,
+      "height": 960,
+      "frames": 542,
+      "fps": 48.0
+    },
+    "chunks": [
+      {
+        "index": 0.0,
+        "action": "still",
+        "frames": 17,
+        "received": 0
+      },
+      {
+        "index": 1.0,
+        "action": "still",
+        "frames": 24,
+        "received": 3
+      },
+      {
+        "index": 2.0,
+        "action": "still",
+        "frames": 24,
+        "received": 23
+      },
+      {
+        "index": 3.0,
+        "action": "still",
+        "frames": 24,
+        "received": 47
+      },
+      {
+        "index": 4.0,
+        "action": "still",
+        "frames": 24,
+        "received": 72
+      },
+      {
+        "index": 5.0,
+        "action": "w",
+        "frames": 24,
+        "received": 96
+      },
+      {
+        "index": 6.0,
+        "action": "w",
+        "frames": 24,
+        "received": 129
+      },
+      {
+        "index": 7.0,
+        "action": "w",
+        "frames": 24,
+        "received": 153
+      },
+      {
+        "index": 8.0,
+        "action": "still",
+        "frames": 24,
+        "received": 173
+      },
+      {
+        "index": 9.0,
+        "action": "right",
+        "frames": 24,
+        "received": 203
+      },
+      {
+        "index": 10.0,
+        "action": "right",
+        "frames": 24,
+        "received": 224
+      },
+      {
+        "index": 11.0,
+        "action": "right",
+        "frames": 24,
+        "received": 247
+      },
+      {
+        "index": 12.0,
+        "action": "left",
+        "frames": 24,
+        "received": 273
+      },
+      {
+        "index": 13.0,
+        "action": "left",
+        "frames": 24,
+        "received": 296
+      },
+      {
+        "index": 14.0,
+        "action": "left",
+        "frames": 24,
+        "received": 320
+      },
+      {
+        "index": 15.0,
+        "action": "left",
+        "frames": 24,
+        "received": 344
+      },
+      {
+        "index": 16.0,
+        "action": "still",
+        "frames": 24,
+        "received": 365
+      },
+      {
+        "index": 17.0,
+        "action": "still",
+        "frames": 24,
+        "received": 392
+      },
+      {
+        "index": 18.0,
+        "action": "still",
+        "frames": 24,
+        "received": 416
+      },
+      {
+        "index": 19.0,
+        "action": "still",
+        "frames": 24,
+        "received": 440
+      },
+      {
+        "index": 20.0,
+        "action": "still",
+        "frames": 24,
+        "received": 464
+      },
+      {
+        "index": 21.0,
+        "action": "still",
+        "frames": 24,
+        "received": 489
+      },
+      {
+        "index": 22.0,
+        "action": "still",
+        "frames": 24,
+        "received": 512
+      }
+    ],
+    "segments": [
+      {
+        "label": "settle",
+        "seconds": 2,
+        "start_frame": 1,
+        "start_seconds": 4.95,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "approach",
+        "seconds": 1,
+        "start_frame": 72,
+        "start_seconds": 7.02,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "forward",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "look_right",
+        "seconds": 1.2,
+        "start_frame": 173,
+        "start_seconds": 9.399,
+        "rotation_speed_deg": 1,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "right",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "look_left",
+        "seconds": 1.2,
+        "start_frame": 247,
+        "start_seconds": 10.986,
+        "rotation_speed_deg": 1,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "left",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "settle",
+        "seconds": 2,
+        "start_frame": 344,
+        "start_seconds": 13.069,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "end",
+        "seconds": 0.8,
+        "start_frame": 449,
+        "start_seconds": 15.07,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      }
+    ],
+    "arrival_frame": null,
+    "walk_in_end_seconds": null
+  },
+  "video_sha256": "979376ba8b7a79a2b664ee8759ae4ab814e715b9b9f3abc86a4e902390840cbf",
+  "task_reference_recording": "data/000/3_video.mp4",
+  "review": {
+    "reviewed_at": "2026-10-08T18:06:28.428235+00:00",
+    "method": "visual inspection of four timestamped frames",
+    "scene_coherent": true,
+    "robot_visible": true,
+    "task_success_verified": false,
+    "geometry_reconstructed": false
+  }
+}

@@ -1,0 +1,262 @@
+{
+  "theme": "kitchen",
+  "status": "ready",
+  "prompt": "Photorealistic Sunday Kitchen robot workcell. Oak joinery, stone counters, and soft afternoon light. Exactly one white Franka Panda seven-joint industrial robot arm with black circular joint covers, two parallel metal fingers, visible cabling and a bolted base on the right side of a workbench. Exactly one ceramic block on the workbench in front of the fingers and one shallow receiving tray. Detailed physical materials, natural shadows, worn edges and reflections, documentary realism.",
+  "seed_source": "reference",
+  "source_recording": null,
+  "task_reference_recording": "data/000/3_video.mp4",
+  "geometry": "No geometry is returned by the hosted Reactor video API.",
+  "task_validation": "Visual experiment; robot action and contacts are not physics measurements.",
+  "attribution": "Eidon AI / Solidic Labs Inc \u00b7 Egocentric POV \u00b7 CC-BY-4.0",
+  "updated_at": "2026-10-08T18:05:58.339238+00:00",
+  "seed_reference": {
+    "path": "public/robot-worlds/kitchen.png",
+    "tool": "built-in imagegen",
+    "sha256": "1cb35ab4c6700effc02e1df272ad83cbd1ff7662b0bba53efc0e7a69608c15d7"
+  },
+  "image_sha256": "e7c014fb588e2f67ee410edb02bbcf480c316765ccd90c2a461df82a526b44bd",
+  "message": "Reactor navigable world recorded",
+  "walk_generation": {
+    "model": "reactor/lingbot-world-2",
+    "session_id": "b8efcf07-0630-4f59-900a-100b31ad31b9",
+    "seed": 1901,
+    "prompt": "Photorealistic Sunday Kitchen robot workcell. Oak joinery, stone counters, and soft afternoon light. Exactly one white Franka Panda seven-joint industrial robot arm with black circular joint covers, two parallel metal fingers, visible cabling and a bolted base on the right side of a workbench. Exactly one ceramic block on the workbench in front of the fingers and one shallow receiving tray. Detailed physical materials, natural shadows, worn edges and reflections, documentary realism. First-person observer at standing eye level. The robot stays at its fixed bolted base; its gripper rests above the task object. The observer walks only while movement input is held and looks around only while look input is held. At idle the camera holds still. Continuous view with consistent room layout and robot identity.",
+    "path": "/Users/samuelchien/dev/world-model-hack/.task-rooms/reactor-gyms/kitchen/scan.mp4",
+    "sha256": "01ab536eddb1bd9c5dd959b8d2d8f6794d021f4f52a94b4ad88a19a008f550d9",
+    "received_frames": 564,
+    "elapsed_seconds": 23.992,
+    "video": {
+      "duration_seconds": 11.75,
+      "width": 1664,
+      "height": 960,
+      "frames": 564,
+      "fps": 48.0
+    },
+    "chunks": [
+      {
+        "index": 0.0,
+        "action": "still",
+        "frames": 17,
+        "received": 0
+      },
+      {
+        "index": 1.0,
+        "action": "still",
+        "frames": 24,
+        "received": 5
+      },
+      {
+        "index": 2.0,
+        "action": "still",
+        "frames": 24,
+        "received": 23
+      },
+      {
+        "index": 3.0,
+        "action": "still",
+        "frames": 24,
+        "received": 43
+      },
+      {
+        "index": 4.0,
+        "action": "still",
+        "frames": 24,
+        "received": 70
+      },
+      {
+        "index": 5.0,
+        "action": "still",
+        "frames": 24,
+        "received": 95
+      },
+      {
+        "index": 6.0,
+        "action": "w",
+        "frames": 24,
+        "received": 131
+      },
+      {
+        "index": 7.0,
+        "action": "w",
+        "frames": 24,
+        "received": 151
+      },
+      {
+        "index": 8.0,
+        "action": "w",
+        "frames": 24,
+        "received": 176
+      },
+      {
+        "index": 9.0,
+        "action": "still",
+        "frames": 24,
+        "received": 196
+      },
+      {
+        "index": 10.0,
+        "action": "right",
+        "frames": 24,
+        "received": 227
+      },
+      {
+        "index": 11.0,
+        "action": "right",
+        "frames": 24,
+        "received": 247
+      },
+      {
+        "index": 12.0,
+        "action": "right",
+        "frames": 24,
+        "received": 272
+      },
+      {
+        "index": 13.0,
+        "action": "left",
+        "frames": 24,
+        "received": 296
+      },
+      {
+        "index": 14.0,
+        "action": "left",
+        "frames": 24,
+        "received": 320
+      },
+      {
+        "index": 15.0,
+        "action": "left",
+        "frames": 24,
+        "received": 345
+      },
+      {
+        "index": 16.0,
+        "action": "left",
+        "frames": 24,
+        "received": 369
+      },
+      {
+        "index": 17.0,
+        "action": "still",
+        "frames": 24,
+        "received": 389
+      },
+      {
+        "index": 18.0,
+        "action": "still",
+        "frames": 24,
+        "received": 416
+      },
+      {
+        "index": 19.0,
+        "action": "still",
+        "frames": 24,
+        "received": 440
+      },
+      {
+        "index": 20.0,
+        "action": "still",
+        "frames": 24,
+        "received": 464
+      },
+      {
+        "index": 21.0,
+        "action": "still",
+        "frames": 24,
+        "received": 489
+      },
+      {
+        "index": 22.0,
+        "action": "still",
+        "frames": 24,
+        "received": 512
+      },
+      {
+        "index": 23.0,
+        "action": "still",
+        "frames": 24,
+        "received": 536
+      }
+    ],
+    "segments": [
+      {
+        "label": "settle",
+        "seconds": 2,
+        "start_frame": 1,
+        "start_seconds": 9.395,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "approach",
+        "seconds": 1,
+        "start_frame": 95,
+        "start_seconds": 12.012,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "forward",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "look_right",
+        "seconds": 1.2,
+        "start_frame": 196,
+        "start_seconds": 14.177,
+        "rotation_speed_deg": 1,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "right",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "look_left",
+        "seconds": 1.2,
+        "start_frame": 272,
+        "start_seconds": 15.799,
+        "rotation_speed_deg": 1,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "left",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "settle",
+        "seconds": 2,
+        "start_frame": 369,
+        "start_seconds": 17.888,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      },
+      {
+        "label": "end",
+        "seconds": 0.8,
+        "start_frame": 473,
+        "start_seconds": 19.89,
+        "rotation_speed_deg": 4.0,
+        "move_longitudinal": "idle",
+        "move_lateral": "idle",
+        "look_horizontal": "idle",
+        "look_vertical": "idle"
+      }
+    ],
+    "arrival_frame": null,
+    "walk_in_end_seconds": null
+  },
+  "video_sha256": "01ab536eddb1bd9c5dd959b8d2d8f6794d021f4f52a94b4ad88a19a008f550d9",
+  "review": {
+    "reviewed_at": "2026-10-08T18:11:46.158197+00:00",
+    "scope": "Usable generated room preview only",
+    "method": "Visual inspection of four timestamped frames",
+    "notes": "Room appearance retained; robot base and proportions drift in later frames.",
+    "robot_consistency_verified": false,
+    "task_success_verified": false,
+    "geometry_reconstructed": false
+  }
+}

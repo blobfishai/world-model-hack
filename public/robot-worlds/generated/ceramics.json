@@ -1,0 +1,12 @@
+{
+  "model": "reactor/lingbot-world-2",
+  "prompt": "Photorealistic first-person exploration of Kiln & Clay, a full-scale robotics training facility. Adobe arches, indigo tile, and the glow of a pottery kiln. The room contains a real seven-joint white and black Franka Panda robot arm bolted to a substantial workbench, a parallel two-finger gripper, and a clay vessel ready for manipulation. The articulated robot has rounded cast-metal link housings, visible joints, cables, rubber fingertips, and realistic proportions. Detailed working equipment, physically plausible materials, subtle wear, glass reflections, natural indirect light, contact shadows, consistent scale and camera parallax. Keep the room and all objects coherent as the viewer moves. Continuous eye-level camera, no cuts, no text, no UI, no flat image walls or low-poly scenery.",
+  "seed": 204,
+  "source": "/robot-worlds/ceramics.png",
+  "video": "/robot-worlds/generated/ceramics.mp4",
+  "poster": "/robot-worlds/generated/ceramics.jpg",
+  "frames": 448,
+  "sha256": "88198700914fb274dbe48986d2e3c03c570e103c039680d6beedfee5e08c7b2b",
+  "generated_at": "2026-10-08T18:01:21.893336+00:00",
+  "format": "Interactive world-model video; no mesh or robot dynamics are returned by Reactor."
+}

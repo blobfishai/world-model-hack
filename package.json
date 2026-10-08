@@ -1,0 +1,56 @@
+{
+  "name": "world-model-hack",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "reactor:check": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/check-reactor.mjs",
+    "reactor:probe": "uv run rooms-reactor-probe",
+    "worlds:videos": "uv run python -m task_rooms.world_videos",
+    "test:robot-worlds-browser": "playwright test -c playwright.worlds.config.ts",
+    "rooms:server": "uv run --extra train rooms-server",
+    "rooms:dev": "node scripts/dev-rooms.mjs",
+    "world:prepare": "uv run --extra data task-world-prepare",
+    "world:reactor-check": "node scripts/check-world-reactor.mjs",
+    "rooms:gym": "uv run rooms-gym",
+    "rooms:train": "uv run --extra train rooms-train",
+    "test:worker": "uv run --extra test pytest -q",
+    "test:rooms": "node --experimental-strip-types --test tests/rooms.test.mjs tests/world.test.mjs",
+    "test:browser": "playwright test",
+    "reactor-world:probe": "uv run --extra playground reactor-world probe",
+    "reactor-world:cli": "uv run --extra playground reactor-world",
+    "test:reactor-world": "node --experimental-strip-types --test tests/reactor-world.test.mjs",
+    "test:reactor-world-browser": "playwright test -c playwright.reactor-world.config.ts",
+    "test:play": "playwright test --config playwright.play.config.ts"
+  },
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "dependencies": {
+    "@reactor-models/helios": "^1.0.1",
+    "@reactor-models/lingbot-world-2": "1.0.1",
+    "@reactor-models/sana-streaming": "2.2.1",
+    "@reactor-team/js-sdk": "^3.1.0",
+    "@reactor-team/ui": "^1.4.1",
+    "hls.js": "^1.6.0",
+    "next": "^15.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "three": "^0.186.1",
+    "zustand": "^5.0.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.186.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.9.0"
+  },
+  "packageManager": "pnpm@9.15.0+sha512.76e2379760a4328ec4415815bcd6628dee727af3779aaa4c914e3944156c4299921a89f976381ee107d41f12cfa4b66681ca9c718f0668fa0831ed4c6d8ba56c"
+}
