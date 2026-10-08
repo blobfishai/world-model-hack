@@ -44,11 +44,12 @@
     ".task-rooms/next-reactor-gym-release-v3/types/**/*.ts",
     ".task-rooms/next-reactor-gym-release/types/**/*.ts",
     ".task-rooms/next-reactor-quota-fix/types/**/*.ts",
+    ".task-rooms/next-reactor-sdp-fix/types/**/*.ts",
     ".task-rooms/next-robot-worlds-build/types/**/*.ts",
     ".task-rooms/next-robot-worlds-release/types/**/*.ts",
     ".task-rooms/next-world-test/types/**/*.ts",
     "next-env.d.ts",
-    ".task-rooms/next-reactor-sdp-fix/types/**/*.ts"
+    ".task-rooms/next-world-build/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
