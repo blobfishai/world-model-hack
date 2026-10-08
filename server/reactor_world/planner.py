@@ -6,11 +6,11 @@ import os
 from pathlib import Path
 
 from . import gemini
-from .schema import ChildrenPlan, HubPlan, SourceRef, World, WorldRoom
+from .schema import ChildrenPlan, FootageSeed, HubPlan, SourceRef, World, WorldRoom
 from .sources import ATTRIBUTION
 from .store import now
 
-PLANNER_VERSION = 2  # 2: sharpest well-lit frame within 1.5 s of the requested start
+PLANNER_VERSION = 3  # 3: rooms are real places from the data/ footage, each a Reactor world seeded by its frame
 ARC = 150  # child doors spread across the front of each room, in degrees
 
 KINDS = ("Use kinds: table, counter, sink, shelf, cabinet, drawer, sofa, bed for furniture, and box, book, cylinder, "
@@ -65,6 +65,38 @@ def plan_hub(image: Path, task_type: str | None, raw_path: Path) -> HubPlan:
     return gemini.generate(HubPlan, [prompt, gemini.image_part(image)], raw_path=raw_path)
 
 
+def plan_footage_world(image: Path, task_type: str | None, candidates: list[dict], raw_path: Path) -> HubPlan:
+    """Rooms are real places chosen from the footage; each frame seeds that room's Reactor world."""
+    activity = f" of {task_type.replace('_', ' ')}" if task_type else ""
+    prompt = (
+        "You are building an explorable, photoreal world for Reactor's LingBot World 2 world model from real egocentric "
+        f"(head-mounted camera) household footage, plus robot-learning task rooms. The first image is the beginning image "
+        f"of the start video{activity}: it seeds the hub. After it come numbered candidate frames from the same video and "
+        "from other recordings in the dataset (other homes and activities). Each chosen frame will seed one room's world "
+        "model directly, so a room must be exactly the place its frame shows.\n"
+        "Return: hub_title; summary; hub_prompt (at most 600 characters describing the beginning image as a first-person "
+        "eye-level walkable space, present tense; no people, hands, text or camera jargon); camera_pitch_hint for the hub; "
+        "hub_task; rooms: exactly 6 rooms, each with a different candidate `frame` index. Choose sharp frames that show "
+        "distinct real places with surfaces and small rigid objects a robot arm could manipulate, preferring views where "
+        "hands and arms cover little of the scene; include at least two "
+        "frames from other recordings so the world spans several real rooms, and avoid near-duplicate views. For each room: "
+        "frame; camera_pitch_hint (\"down\" when that frame looks steeply down at a work surface, else \"level\"); "
+        "relation (\"similar\" for the same kind of activity as the hub, \"subskill\" for one component step, \"harder\" "
+        "for more steps or precision, \"variation\" for the same skill in another real setting; use each at least once); "
+        "title; door_label; prompt (at most 600 characters: describe exactly what the frame shows, as an eye-level walkable "
+        f"space; name the task objects and where they rest); task grounded in objects visible in that frame.\n{TASK_RULES}")
+    contents: list = [prompt, "Beginning image:", gemini.image_part(image)]
+    for candidate in candidates:
+        label = candidate["task_type"].replace("_", " ") if candidate.get("task_type") else "household footage"
+        contents += [f"Frame {candidate['index']}: recording {candidate['source_id']} ({label}) at {candidate['t']:.1f}s",
+                     gemini.image_part(candidate["thumbnail"])]
+    plan = gemini.generate(HubPlan, contents, raw_path=raw_path)
+    frames = [room.frame for room in plan.rooms]
+    if any(frame is None or not 0 <= frame < len(candidates) for frame in frames) or len(set(frames)) != len(frames):
+        raise ValueError("The planner must choose six different footage frames")
+    return plan
+
+
 def plan_children(image: Path, room: WorldRoom, raw_path: Path) -> ChildrenPlan:
     prompt = (
         f"The image is the arrival view of the room \"{room.title}\" in a world generated from egocentric household "
@@ -74,16 +106,20 @@ def plan_children(image: Path, room: WorldRoom, raw_path: Path) -> ChildrenPlan:
     return gemini.generate(ChildrenPlan, [prompt, gemini.image_part(image)], raw_path=raw_path)
 
 
-def build_world(identifier: str, source: SourceRef, plan: HubPlan) -> World:
+def build_world(identifier: str, source: SourceRef, plan: HubPlan, candidates: list[dict] | None = None) -> World:
     paths = [str(i) for i in range(len(plan.rooms))]
     rooms = {"root": WorldRoom(path="root", parent=None, children=paths, depth=0, title=plan.hub_task.title,
                                relation="source", door_label=plan.hub_title[:40] or "Start", bearing=0,
                                prompt=plan.hub_prompt, camera_pitch_hint=plan.camera_pitch_hint,
                                seed=room_seed(identifier, "root"), task=plan.hub_task)}
     for path, room, bearing in zip(paths, plan.rooms, spread(len(plan.rooms), behind=plan.camera_pitch_hint == "down")):
+        frame = candidates[room.frame] if candidates and room.frame is not None else None
+        footage = FootageSeed(source_id=frame["source_id"], file=frame["file"], t=frame["t"],
+                              task_type=frame.get("task_type")) if frame else None
         rooms[path] = WorldRoom(path=path, parent="root", depth=1, title=room.title, relation=room.relation,
                                 door_label=room.door_label, bearing=bearing, prompt=room.prompt,
-                                seed=room_seed(identifier, path), task=room.task)
+                                camera_pitch_hint=room.camera_pitch_hint if footage else "level",
+                                seed=room_seed(identifier, path), task=room.task, footage=footage)
     stamp = now()
     return World(id=identifier, status="ready", source=source, hub_title=plan.hub_title, summary=plan.summary,
                  rooms=rooms, planner={"version": PLANNER_VERSION, "model": os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")},

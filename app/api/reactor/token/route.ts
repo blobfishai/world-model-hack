@@ -7,11 +7,12 @@ const MODELS = new Map([
   ["helios", "reactor/helios"],
   ["sana-streaming", "reactor/sana-streaming"],
   ["lingbot-world-2", "reactor/lingbot-world-2"],
+  ["lingbot", "reactor/lingbot"],
 ]);
 
 // Walkable world sessions bill for wall-clock time while connected, so the
 // server also caps how long one LingBot session may live.
-const SESSION_SECONDS = new Map([["reactor/lingbot-world-2", 30 * 60]]);
+const SESSION_SECONDS = new Map([["reactor/lingbot-world-2", 30 * 60], ["reactor/lingbot", 30 * 60]]);
 
 // Session budget for one token — how many sessions it may ever create
 // (closed sessions still count). The client reuses one token for its

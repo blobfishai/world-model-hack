@@ -18,7 +18,7 @@ from task_rooms.reactor_video import generate_video
 
 from . import lingbot, planner, playground_export, reconstruct, robot_sim
 from .schema import DemoSummary, JobName, SourceRef, World
-from .sources import ATTRIBUTION, beginning_image, resolve_source, signature
+from .sources import ATTRIBUTION, beginning_image, footage_candidates, resolve_source, signature
 from .store import WorldStore, now
 
 
@@ -127,14 +127,25 @@ class WorldJobs:
         try:
             start = folder / "start.jpg"
             actual = await asyncio.to_thread(beginning_image, path, t, start, source["duration"])
+            # Real places for the rooms: sharp frames across the start video and the other recordings in data/.
+            candidates = await asyncio.to_thread(footage_candidates, source["id"], folder / "footage")
             async with self.gemini:
-                plan = await on_daemon_thread(planner.plan_hub, start, source.get("task_type"), folder / "plan-response.json")
+                if len(candidates) >= 6:
+                    plan = await on_daemon_thread(planner.plan_footage_world, start, source.get("task_type"), candidates,
+                                                  folder / "plan-response.json")
+                else:
+                    candidates = []
+                    plan = await on_daemon_thread(planner.plan_hub, start, source.get("task_type"), folder / "plan-response.json")
             digest = await asyncio.to_thread(file_digest, path)
             reference = SourceRef(id=source["id"], file=source["file"], t=actual, task_type=source.get("task_type"), sha256=digest)
-            world = planner.build_world(identifier, reference, plan)
+            world = planner.build_world(identifier, reference, plan, candidates)
             world.created_at = self.store.require(identifier).created_at
-            arrival = self.store.room_folder(identifier, "root") / "arrival.jpg"
-            await asyncio.to_thread(shutil.copy2, start, arrival)
+            await asyncio.to_thread(shutil.copy2, start, self.store.room_folder(identifier, "root") / "arrival.jpg")
+            for room, planned in zip((world.rooms[p] for p in world.rooms["root"].children), plan.rooms):
+                if room.footage is not None:
+                    # A footage room is enterable at once: its real frame seeds the Reactor world.
+                    await asyncio.to_thread(shutil.copy2, candidates[planned.frame]["image"],
+                                            self.store.room_folder(identifier, room.path) / "arrival.jpg")
             self.store.save(world)
             if autoscan():
                 for room in ["root", *world.rooms["root"].children]:
@@ -183,6 +194,11 @@ class WorldJobs:
         try:
             if room.parent is None:
                 seed_image, script = self.store.folder(world_id) / "start.jpg", lingbot.hub_script(room.camera_pitch_hint)
+            elif room.footage is not None:
+                # Built from a real footage frame: Reactor starts there and looks around the real place.
+                seed_image, script = self.arrival(world_id, path), lingbot.hub_script(room.camera_pitch_hint)
+                if not seed_image.is_file():
+                    raise ValueError("This room's footage frame is missing; create the world again")
             else:
                 parent = world.rooms[room.parent]
                 for _ in range(240):  # a parent queued at the same time finishes first
@@ -214,7 +230,7 @@ class WorldJobs:
             (folder / "scan.pending.encoder.log").unlink(missing_ok=True)
             scan = folder / "scan.mp4"
             await asyncio.to_thread(storyboard, scan, folder / "storyboard.jpg")
-            if room.parent is not None:
+            if room.parent is not None and room.footage is None:
                 index = result.arrival_frame if result.arrival_frame is not None else 0
                 await asyncio.to_thread(lingbot.extract_frame_at, scan, index, folder / "arrival.jpg")
             receipt = {**asdict(result), "path": "scan.mp4", "seed_image": seed_image.name,
@@ -246,10 +262,13 @@ class WorldJobs:
 
             def apply(world: World):
                 room = world.rooms[path]
-                room.physics, room.export = summary, None
+                room.physics, room.export, room.robot_demo = summary, None, None
                 room.jobs.export.status, room.jobs.export.progress, room.jobs.export.message = "idle", 0, ""
+                room.jobs.demo.status, room.jobs.demo.progress, room.jobs.demo.message = "idle", 0, ""
             self.store.mutate(world_id, apply)
             self.store.room_folder(world_id, path).joinpath("export.zip").unlink(missing_ok=True)
+            for name in ("robot-demo.npz", "robot-demo.mp4", "robot-demo-reactor.mp4", "preview.png"):
+                self.store.room_folder(world_id, path).joinpath(name).unlink(missing_ok=True)
             self.store.set_job(world_id, path, "physics", status="ready", progress=100, error=None,
                                message=f"{summary.objects} objects passed MuJoCo validation")
         except Exception as error:

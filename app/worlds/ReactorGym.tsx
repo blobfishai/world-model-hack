@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from "rea
 import { LingbotWorld2Model } from "@reactor-models/lingbot-world-2/core";
 import { downloadClipAsFile } from "@reactor-team/js-sdk";
 import { IDLE_AXES, axesFromInput, diffAxes, isTypingTarget, type Axes, type AxisCommand } from "../world/lib/controls";
-import type { WorldRoom } from "../lib/robot-worlds";
+import { worldGymUrl, type WorldRoom } from "../lib/robot-worlds";
 import { composeGymPrompt, phaseLabel, taskPhases, type TaskPhase } from "./reactor-prompts";
 import { acceptSequenceChunk, doorSequence, taskSequence, type GenerationSequence } from "./reactor-director";
 import { connectionFailure, MAX_CONNECTION_RETRIES, readCooldown, REACTOR_COOLDOWN_KEY, saveCooldown, waitForRetry } from "./reactor-connection";
@@ -13,8 +13,8 @@ import styles from "./reactor-gym.module.css";
 export interface GeneratedGym { theme: string; image: string; video: string; model: string; seedSource: string }
 const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
 
-export default function ReactorGym({ room, generated, configured, onPhysics, onDoor, nextRoom }: {
-  room: WorldRoom; generated?: GeneratedGym; configured: boolean; onPhysics: () => void; onDoor: (path: string) => void; nextRoom?: WorldRoom;
+export default function ReactorGym({ room, entryRequest = 0, generated, configured, onPhysics, onDoor, nextRoom }: {
+  room: WorldRoom; entryRequest?: number; generated?: GeneratedGym; configured: boolean; onPhysics: () => void; onDoor: (path: string) => void; nextRoom?: WorldRoom;
 }) {
   const client = useRef<LingbotWorld2Model | null>(null);
   const video = useRef<HTMLVideoElement | null>(null);
@@ -28,6 +28,9 @@ export default function ReactorGym({ room, generated, configured, onPhysics, onD
   const tokenRef = useRef<string | null>(null);
   const connection = useRef<AbortController | null>(null);
   const closing = useRef<Promise<void>>(Promise.resolve());
+  const connectRef = useRef<() => Promise<void>>(async () => {});
+  const lastEntryRequest = useRef(0);
+  const pendingTask = useRef<{ path: string; phase: TaskPhase | "sequence" } | null>(null);
   const cooldownUntil = useRef(0);
   const requestedPrompt = useRef("");
   const lastInput = useRef(Date.now());
@@ -84,6 +87,7 @@ export default function ReactorGym({ room, generated, configured, onPhysics, onD
     const model = client.current; client.current = null;
     generation.current++; ready.current = false;
     sequence.current = null;
+    pendingTask.current = null;
     keys.current.clear(); axes.current = IDLE_AXES; sent.current = IDLE_AXES;
     pausedRef.current = false;
     if (video.current) { video.current.pause(); video.current.srcObject = null; }
@@ -169,11 +173,11 @@ export default function ReactorGym({ room, generated, configured, onPhysics, onD
     }).catch(cause => { if (sequence.current?.steps === run.steps) { cancelSequence(false); report(cause); } });
   }, [cancelSequence, report, sync, wake]);
 
-  const startSequence = (run: GenerationSequence) => {
+  const startSequence = useCallback((run: GenerationSequence) => {
     if (!client.current || !ready.current) return;
     keys.current.clear(); customTaskRef.current = ""; setCustomTask("");
     setDemoFinished(false); sequence.current = run; setSequenceState(run); sendSequenceStep(run);
-  };
+  }, [sendSequenceStep]);
 
   const sequenceChunk = (chunk: Parameters<typeof acceptSequenceChunk>[1]) => {
     const run = sequence.current;
@@ -342,10 +346,20 @@ export default function ReactorGym({ room, generated, configured, onPhysics, onD
       }
     }
   };
+  connectRef.current = connect;
+
+  useEffect(() => {
+    if (entryRequest === lastEntryRequest.current) return;
+    lastEntryRequest.current = entryRequest;
+    if (!client.current && !connection.current && configured) void connectRef.current();
+  }, [entryRequest, configured]);
 
   useEffect(() => {
     variationRef.current = 0; setVariation(0); setError(null);
     directionRef.current = ""; setDirection(""); setDirectionDraft(""); setDirectorOpen(false);
+    phaseRef.current = "ready"; setPhase("ready"); setDemoFinished(false);
+    customTaskRef.current = ""; setCustomTask(""); setTaskDraft("");
+    if (pendingTask.current?.path !== room.path) pendingTask.current = null;
     const model = client.current;
     if (model?.getStatus() === "ready") void seed(model);
   }, [room.path, image, seed]);
@@ -372,6 +386,23 @@ export default function ReactorGym({ room, generated, configured, onPhysics, onD
     requestedPrompt.current = composeGymPrompt(roomRef.current, next, axes.current.move_longitudinal !== "idle" || axes.current.move_lateral !== "idle", variationRef.current, "", directionRef.current);
     void model.setPrompt({ prompt: requestedPrompt.current }).catch(report);
   }, [cancelSequence, report, wake]);
+
+  const requestTask = useCallback((next: TaskPhase | "sequence") => {
+    if (!live || !ready.current) {
+      pendingTask.current = { path: roomRef.current.path, phase: next };
+      if (!client.current && !connection.current) void connectRef.current();
+      return;
+    }
+    if (next === "sequence") startSequence(taskSequence(roomRef.current, variationRef.current, directionRef.current));
+    else perform(next);
+  }, [live, perform, startSequence]);
+
+  useEffect(() => {
+    const task = pendingTask.current;
+    if (!live || !task || task.path !== room.path) return;
+    pendingTask.current = null;
+    requestTask(task.phase);
+  }, [live, room.path, requestTask]);
 
   const directTask = () => {
     const model = client.current, instruction = taskDraft.trim().replace(/\s+/g, " ").slice(0, 220);
@@ -467,16 +498,17 @@ export default function ReactorGym({ room, generated, configured, onPhysics, onD
     </div>}
     {live && nextRoom && <button className={styles.portal} disabled={!!sequenceState || busy} aria-label={`Walk to ${nextRoom.theme.name}`} onClick={() => startSequence(doorSequence(room, nextRoom, directionRef.current))}><small>NEXT ROOM</small><strong>{nextRoom.theme.name}</strong><span>Generate a walk to this room ↗</span></button>}
     <div className={styles.bottom}>
-      <div className={styles.task}><div className={styles.taskTitle}><div><small>ONE ROOM · ONE ROBOT TASK</small><h2>{room.goal}</h2></div><span>{room.kind.toUpperCase()}</span><button className={styles.runTask} aria-label="Run task with Reactor" disabled={!live || busy || !!sequenceState} onClick={() => startSequence(taskSequence(room, variationRef.current, directionRef.current))}>▷ Run task</button></div>
-        <div className={styles.phases}>{taskPhases(room).map((item, index) => <button key={item} aria-pressed={!customTask && phase === item} disabled={!live || busy} onClick={() => perform(item)}><b>{index + 1}</b>{phaseLabel(room, item)}</button>)}</div>
+      <div className={styles.task}><div className={styles.taskTitle}><div><small>ONE ROOM · ONE ROBOT TASK</small><h2>{room.goal}</h2></div><span>{room.kind.toUpperCase()}</span><button className={styles.runTask} aria-label="Run task with Reactor" disabled={!configured || busy || cooldownSeconds > 0 || !!sequenceState} onClick={() => requestTask("sequence")}>▷ Run task</button></div>
+        <div className={styles.phases}>{taskPhases(room).map((item, index) => <button key={item} aria-pressed={!customTask && phase === item} disabled={!configured || busy || cooldownSeconds > 0} onClick={() => requestTask(item)}><b>{index + 1}</b>{phaseLabel(room, item)}</button>)}</div>
         {sequenceState && <div className={styles.sequenceProgress} role="status"><span>{sequenceState.index + 1} / {sequenceState.steps.length} · {sequenceState.steps[sequenceState.index].label}</span><progress aria-label="Reactor sequence progress" max={sequenceState.steps.length} value={sequenceState.index + sequenceState.received / sequenceState.steps[sequenceState.index].frames} /><button onClick={() => cancelSequence()}>Stop sequence</button></div>}
         {live && <form className={styles.directTask} onSubmit={event => { event.preventDefault(); directTask(); }}><label htmlFor="reactor-robot-task">Direct the robot</label><input id="reactor-robot-task" aria-label="Describe a robot task" value={taskDraft} maxLength={220} disabled={busy} onChange={event => setTaskDraft(event.target.value)} placeholder={`Place the ${room.theme.object} gently in the tray…`} /><button type="submit" disabled={busy || !taskDraft.trim()}>Generate task ↗</button></form>}
-        <p>{live ? demoFinished ? "Task sequence generated · Run it again or take control." : customTask || `${phaseLabel(room, phase)} · Press E for the next task instruction.` : "Enter the live world to try the robot task."}<span>Visual robot experiment · contacts are unverified</span></p>
+        <p>{live ? demoFinished ? "Task sequence generated · Run it again or take control." : customTask || `${phaseLabel(room, phase)} · Press E for the next task instruction.` : "Run a task to enter Reactor, or play it with MuJoCo physics."}<span>Reactor video · use the simulation for physical task checks</span></p>
       </div>
       <div className={styles.toolbar}><div className={styles.hint}><kbd>W A S D</kbd> walk <span>·</span> drag / arrows look <span>·</span> <kbd>E</kbd> robot task</div><div className={styles.actions}>
         {active && <><button disabled={busy || !live} onClick={() => { variationRef.current++; setVariation(variationRef.current); const model = client.current; if (model) void seed(model); }}>New variation{variation ? ` ${variation}` : ""}</button>
           <button disabled={!live || captureBusy} onClick={() => void capture()}>{captureBusy ? "Saving…" : "Save 10 s clip"}</button><button onClick={() => void disconnect()}>Leave Reactor</button></>}
-        <button onClick={() => { void disconnect(); onPhysics(); }}>Physics prototype ↗</button>
+        <button onClick={() => { void disconnect(); onPhysics(); }}>Play robot task ↗</button>
+        <a href={worldGymUrl(room)}>Create training gym ↗</a>
       </div></div>
       {live && <div className={styles.touch} aria-label="World movement controls">{[["arrowleft", "↶"], ["w", "↑"], ["arrowright", "↷"], ["a", "←"], ["s", "↓"], ["d", "→"]].map(([key, label]) => <button key={key} aria-label={`Walk ${key}`} onPointerDown={event => { event.stopPropagation(); event.currentTarget.setPointerCapture(event.pointerId); press(key, true); }} onPointerUp={() => press(key, false)} onPointerCancel={() => press(key, false)} onLostPointerCapture={() => press(key, false)}>{label}</button>)}</div>}
     </div>

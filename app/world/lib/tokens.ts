@@ -1,6 +1,6 @@
 // Session-scoped Reactor JWTs from /api/reactor/token, memoized per model for their lifetime (see HeliosApp):
 // a session is bound to the token that created it.
-export type ReactorModelKey = "lingbot-world-2" | "sana-streaming";
+export type ReactorModelKey = "lingbot-world-2" | "lingbot" | "sana-streaming";
 
 const REFRESH_SKEW_MS = 60_000;
 const cached = new Map<ReactorModelKey, { jwt: string; expiresAtMs: number }>();

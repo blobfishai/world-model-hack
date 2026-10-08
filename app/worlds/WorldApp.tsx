@@ -2,8 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { validWorldPath, worldChildren, worldRoom } from "../lib/robot-worlds";
-import { ReactorRoomView } from "../rooms/ReactorRoomView";
+import { validWorldPath, worldChildren, worldGymUrl, worldRoom } from "../lib/robot-worlds";
+import { ReactorPhysicsView } from "./ReactorPhysicsView";
 import ReactorGym, { type GeneratedGym } from "./ReactorGym";
 import type { RobotControl, RobotState, WorldSession } from "./types";
 import styles from "./worlds.module.css";
@@ -21,6 +21,7 @@ export default function WorldApp({ initialPath, initialMode, videos, generated, 
 }) {
   const [path, setPath] = useState(initialPath);
   const [mode, setMode] = useState(initialMode);
+  const [entryRequest, setEntryRequest] = useState(0);
   const room = worldRoom(path), children = worldChildren(path);
   const [session, setSession] = useState<WorldSession | null>(null);
   const [state, setState] = useState<RobotState | null>(null);
@@ -125,12 +126,14 @@ export default function WorldApp({ initialPath, initialMode, videos, generated, 
   }, [mode, stopMotion, toggleGrip]);
 
   const navigate = useCallback((next: string) => {
-    stopMotion(); setDirectory(false); setShowReactor(false); setPath(next);
+    stopMotion(); setDirectory(false); setPath(next);
+    if (mode === "reactor") setEntryRequest(value => value + 1);
     const query = new URLSearchParams(); if (next !== "root") query.set("room", next); if (mode === "physics") query.set("mode", "physics");
     history.pushState({}, "", `/worlds${query.size ? `?${query}` : ""}`);
   }, [stopMotion, mode]);
   const changeMode = (next: "reactor" | "physics") => {
     stopMotion(); setShowReactor(false); setMode(next);
+    if (next === "reactor") setEntryRequest(value => value + 1);
     const query = new URLSearchParams(location.search); if (next === "physics") query.set("mode", next); else query.delete("mode");
     history.pushState({}, "", `/worlds${query.size ? `?${query}` : ""}`);
   };
@@ -149,25 +152,24 @@ export default function WorldApp({ initialPath, initialMode, videos, generated, 
   const moveButton = (direction: string, label: string, symbol: string) => <button aria-label={label} onPointerDown={event => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); input.current.add(direction); }} onPointerUp={() => input.current.delete(direction)} onPointerCancel={() => input.current.delete(direction)} onLostPointerCapture={() => input.current.delete(direction)}>{symbol}</button>;
   const progress = robot?.is_success ? 1 : state?.tasks[0]?.progress ?? 0;
   return <div className={styles.app} style={{ "--accent": room.theme.accent } as CSSProperties}>
-    <header className={styles.header}><a href="/worlds" className={styles.brand}><span>◈</span>rooms<span className={styles.brandSub}>ROBOT WORLDS</span></a><span className={styles.experiment}>EXPERIMENT 03 <i /> REACTOR WORLD MODEL</span><div className={styles.headerActions}><a href="/explore">Footage explorer ↗</a><button onClick={() => changeMode(mode === "reactor" ? "physics" : "reactor")} aria-pressed={mode === "reactor"}>{mode === "reactor" ? "Physics prototype ↗" : "◉ Reactor world"}</button>{mode === "physics" && <button onClick={() => setShowReactor(v => !v)} aria-pressed={showReactor}>◉ Live Reactor</button>}</div></header>
+    <header className={styles.header}><a href="/worlds" className={styles.brand}><span>◈</span>rooms<span className={styles.brandSub}>ROBOT WORLDS</span></a><span className={styles.experiment}>EXPERIMENT 03 <i /> REACTOR WORLD MODEL</span><div className={styles.headerActions}><a href="/lab">Task lab ↗</a><button onClick={() => changeMode(mode === "reactor" ? "physics" : "reactor")} aria-pressed={mode === "reactor"}>{mode === "reactor" ? "Physics prototype ↗" : "◉ Reactor world"}</button>{mode === "physics" && <button onClick={() => setShowReactor(v => !v)} aria-pressed={showReactor}>◉ High fidelity</button>}</div></header>
     <nav className={styles.trail}><button aria-label="Show connected robot rooms" onClick={() => setDirectory(v => !v)}>☷</button><button aria-label="Return to parent world" disabled={!room.parent} onClick={() => room.parent && navigate(room.parent)}>←</button><button onClick={() => navigate("root")}>The Glasshouse</button>{path !== "root" && <><span>/</span><span>{room.theme.name}</span></>}<span className={styles.depth}>DEPTH {String(room.depth).padStart(2, "0")} · {completed.length} COMPLETED</span></nav>
     <main className={styles.main}>
       <aside className={`${styles.directory} ${directory ? styles.directoryOpen : ""}`}><div className={styles.directoryHeading}><small>WALK SOMEWHERE NEW</small><h2>10 other worlds <span>↗</span></h2><p>Different environments. One task per room.</p></div><div className={styles.roomList}>{children.map((child, index) => <button key={child.path} aria-label={`Enter ${child.theme.name}`} onClick={() => navigate(child.path)}><img src={generated.find(asset => asset.theme === child.theme.id)?.image ?? child.image} alt="" /><span><small>{String(index + 1).padStart(2, "0")} / {child.kind.toUpperCase()}</small><strong>{child.theme.name}</strong><em>{child.goal}</em></span><b>{completed.includes(child.path) ? "✓" : "↗"}</b></button>)}</div><p className={styles.directoryNote}>Every doorway has another ten paths.<br />Choose a world and enter Reactor.</p></aside>
       <section className={styles.stage} aria-label={`Playable robot room: ${room.theme.name}`}>
-        {mode === "reactor" ? <ReactorGym room={room} nextRoom={children[0]} generated={generated.find(asset => asset.theme === room.theme.id)} configured={reactorConfigured} onPhysics={() => changeMode("physics")} onDoor={navigate} /> : <>
+        {mode === "reactor" ? <ReactorGym room={room} entryRequest={entryRequest} nextRoom={children[0]} generated={generated.find(asset => asset.theme === room.theme.id)} configured={reactorConfigured} onPhysics={() => changeMode("physics")} onDoor={navigate} /> : <>
         {session && <RobotWorld session={session} stateRef={stateRef} room={room} children={children} videoUrl={videos.includes(room.theme.id) ? room.video : null} onDoor={navigate} onCanvas={setCanvas} />}
         {!session && <div className={styles.loading} style={{ backgroundImage: `linear-gradient(#10181533,#101815aa), url(${room.image})` }}><span className={styles.spinner} /><p>{error ? "Connection needs attention" : "Preparing your robot world…"}</p></div>}
+        <ReactorPhysicsView room={room} canvas={canvas} enabled={showReactor} configured={reactorConfigured} onEnabledChange={setShowReactor} />
         <div className={styles.roomTitle}><small>WORLD {String(room.index + 1).padStart(2, "0")} <span>MUJOCO PHYSICS</span></small><h1>{room.theme.name}</h1><p>{room.theme.description}</p></div>
-        <div className={styles.mediaBadge}>{videos.includes(room.theme.id) ? <><i /> REACTOR VIDEO ENVIRONMENT</> : <>GENERATED IMAGE ENVIRONMENT</>}<span>3D task objects · live physics</span></div>
         <div className={styles.walkHint}><kbd>W A S D</kbd> walk <span>·</span> drag to look <span>·</span> click doors</div>
         {robot?.is_success && <div className={styles.success} role="status"><span>✓</span><strong>Task complete</strong><p>Real contacts. A real result.</p><button onClick={() => queue({ type: "reset" })}>Try again</button><button onClick={() => navigate(children[0]?.path ?? "root")}>Next world ↗</button></div>}
-        {showReactor && <div className={styles.reactorPanel}><div className={styles.reactorPanelHeader}><strong>Live world model</strong><button aria-label="Close live Reactor" onClick={() => setShowReactor(false)}>×</button></div><ReactorRoomView key={path} canvas={canvas} appearance={room.theme.description} roomName={room.theme.name} /></div>}
         <div className={styles.taskPanel}><div className={styles.taskHeading}><span className={styles.taskIcon}>⌘</span><div><small>YOUR ROBOT TASK <span>{room.kind.toUpperCase()}</span></small><h2>{room.goal}</h2></div><span className={`${styles.connection} ${session && !error ? styles.online : ""}`}><i />{session && !error ? "Physics live" : "Connecting"}</span></div><div className={styles.progress}><i style={{ width: `${progress * 100}%` }} /></div><div className={styles.taskStats}><span>Goal distance <strong data-testid="goal-distance">{robot ? `${(robot.distance * 100).toFixed(1)} cm` : "—"}</strong></span><span>Contact <strong>{robot?.grasped ? "Both fingers ✓" : "Ready to grasp"}</strong></span><span>Step <strong data-testid="robot-step">{robot?.steps ?? 0}</strong></span></div>
           <div className={styles.controls}><div className={styles.dpad}>{moveButton("forward", "Move robot forward", "↑")}<div>{moveButton("left", "Move robot left", "←")}{moveButton("backward", "Move robot backward", "↓")}{moveButton("right", "Move robot right", "→")}</div></div><div className={styles.heightControls}>{moveButton("up", "Raise gripper", "R ↑")}{moveButton("down", "Lower gripper", "F ↓")}</div><button className={styles.gripButton} disabled={!session || robot?.done} onClick={toggleGrip}>{robot?.gripper_open ? "Close gripper" : "Open gripper"}<small>SPACE</small></button><div className={styles.taskActions}><button disabled={!session} onClick={() => { grip.current = 1; queue({ type: "reset" }); }}>↺ Reset task</button><button disabled={!session} onClick={() => queue({ type: "run", controller: "scripted" })}>▷ Watch demo</button><button disabled={!session || exporting} onClick={() => void downloadGym()}>{exporting ? "Exporting…" : "↓ Export training gym"}</button></div></div><p className={styles.controlHint}>Arrow keys move the robot · R / F change height · Space opens or closes the fingers</p>
         </div>
         {error && <div className={styles.error} role="alert">{error}<button onClick={() => setRetry(v => v + 1)}>Reconnect</button></div>}
         </>}
       </section>
-    </main><footer className={styles.footer}><span>{mode === "reactor" ? "REACTOR GENERATES THE VIEW AS YOU MOVE." : "MUJOCO PHYSICS PROTOTYPE."}</span><span>{mode === "reactor" ? "LingBot World 2 · generated video · gym geometry needs reconstruction" : "Franka Panda · 7 articulated joints · physical finger contacts"}</span><a href="/world">Footage → Playground pipeline ↗</a></footer>
+    </main><footer className={styles.footer}><span>{mode === "reactor" ? "REACTOR GENERATES THE VIEW AS YOU MOVE." : "MUJOCO PHYSICS PROTOTYPE."}</span><span>{mode === "reactor" ? "LingBot World 2 · generated video · gym geometry needs reconstruction" : "Franka Panda · 7 articulated joints · physical finger contacts"}</span><a href={worldGymUrl(room)}>Footage → Playground pipeline ↗</a></footer>
   </div>;
 }

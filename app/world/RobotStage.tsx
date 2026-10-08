@@ -77,8 +77,8 @@ function SanaRender({ canvas, prompt, seed, visible, onStatus, onFrames, onError
     style={{ position: "absolute", inset: 0, background: "transparent" }} />;
 }
 
-export function RobotStage({ world, room, reactorConfigured, playgroundAvailable, onJob, onState, onExit }: {
-  world: World; room: WorldRoom; reactorConfigured: boolean; playgroundAvailable: boolean;
+export function RobotStage({ world, room, socketBase, reactorConfigured, playgroundAvailable, onJob, onState, onExit }: {
+  world: World; room: WorldRoom; socketBase: string; reactorConfigured: boolean; playgroundAvailable: boolean;
   onJob: (path: string, kind: JobKind) => Promise<void>;
   onState: (path: string, state: RobotState) => void;
   onExit: () => void;
@@ -195,8 +195,7 @@ export function RobotStage({ world, room, reactorConfigured, playgroundAvailable
       onStateRef.current(room.path, value.state);
       gripRef.current = value.state.metrics.gripper === "closed";
       setGripClosed(gripRef.current);
-      const base = process.env.NEXT_PUBLIC_ROOM_SIM_WS_URL ?? `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:8000`;
-      socket = new WebSocket(`${base}/worlds/robot-sessions/${value.id}`);
+      socket = new WebSocket(`${socketBase}/worlds/robot-sessions/${value.id}`);
       socket.binaryType = "blob";
       socketRef.current = socket;
       socket.onopen = () => { if (!disposed) { axesRef.current = ROBOT_IDLE; setPhase("live"); } };
@@ -230,6 +229,7 @@ export function RobotStage({ world, room, reactorConfigured, playgroundAvailable
         }
       };
       socket.onclose = () => { if (!disposed) setPhase(current => current === "live" || current === "starting" ? "closed" : current); };
+      socket.onerror = () => { if (!disposed) { setError("The robot connection failed. Reconnect to the simulation."); setPhase("error"); } };
     }).catch(cause => {
       if (!disposed) { setError(message(cause)); setPhase("error"); }
     });
@@ -242,7 +242,7 @@ export function RobotStage({ world, room, reactorConfigured, playgroundAvailable
       axesRef.current = ROBOT_IDLE;
       if (frameUrlRef.current) { URL.revokeObjectURL(frameUrlRef.current); frameUrlRef.current = null; }
     };
-  }, [runnable, world.id, room.path, revision, restart]);
+  }, [runnable, world.id, room.path, revision, restart, socketBase]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setFrameLive(performance.now() - lastFrameRef.current < FRAME_LIVE_MS), 500);
@@ -470,7 +470,8 @@ export function RobotStage({ world, room, reactorConfigured, playgroundAvailable
         <span className="rw-robot-icon" aria-hidden="true">⌘</span>
         <div className="rw-robot-title">
           <span className="rw-eyebrow">YOUR ROBOT TASK <b>{robot?.kind ?? "explore"}</b>
-            <em>Real task — from the beginning image of {world.source.file}</em></span>
+            <em>{room.footage ? `Real task — real place from ${room.footage.file} at ${room.footage.t.toFixed(1)} s`
+              : `Real task — from the beginning image of ${world.source.file}`}</em></span>
           <h2>{title}</h2>
         </div>
         <span className={`rw-physics-live${frameLive ? " rw-on" : ""}`} data-testid="robot-physics-status"><i />

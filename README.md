@@ -1,5 +1,48 @@
 # world-model-hack
 
+## Reactor rendering for the physics labs
+
+Open `/worlds?mode=physics` and choose **Start high fidelity view**. The live
+1280×704 MuJoCo camera is streamed to `reactor/sana-streaming` at 24 fps; the
+generated frames fill the main world view. Walking, joint control, contact checks
+and task rewards continue in MuJoCo. **Simulation** shows the source camera,
+and **Reactor view** shows the generated output. Natural, Studio and Evening shift
+lighting and a short appearance prompt update the same model session.
+
+The model re-anchors to the source every five chunks to reduce drift. Live status
+requires both generated chunks and decoded video frames. Room changes reuse the
+camera track and session. A stalled stream exposes the simulation; leaving,
+hiding the tab or two idle minutes releases the session. `REACTOR_API_KEY` enables this paid renderer. Generated video can lag
+or alter visual details; it does not determine physical success.
+
+Run `WORLDS_TEST_URL=http://127.0.0.1:3003 node scripts/check-reactor-physics.mjs`
+for an explicit live model check with screenshots, camera/control checks and
+session cleanup. Normal browser tests mock Reactor authentication.
+
+## MuJoCo Playground task library
+
+`/lab` catalogs the rooms generated from `data/` footage. Each task exposes its
+source recording and time, Reactor walkthrough, native robot demonstration and
+Reactor-rendered demonstration when available. **Build gym + render** resumes
+the reconstruction → native demo → Reactor render → MJX export pipeline. The
+library distinguishes playable simulations from training bundles whose complete
+demonstrations passed native MuJoCo and MJX replay. Failed tasks remain visible
+with the reason they need review.
+
+Exports register with MuJoCo Playground and include PPO training scripts and a
+Colab notebook. Native and JAX environments share the ordered task contract:
+lift requires a continuous one-second hold; place requires reaching, grasping,
+lifting, carrying, settling, releasing and retreating. At 25 Hz the policy sees
+71 state values and controls eight joint/gripper actuators. Task-stage bonuses,
+phase shaping and a completion bonus drive the reward; successful completion
+terminates the episode. A wrapper limits training episodes to 30 seconds.
+
+The environment uses approximate rigid geometry reconstructed from generated
+video, with estimated scale. Human footage supplies the setting and task context,
+not robot action labels. Cloth and fluid simulation and trained policy weights
+are not included. The library's “Training ready” label requires a current task
+contract, successful JIT checks and a successful complete MJX demonstration replay.
+
 ## Playable task world
 
 The default page, `/play`, opens **Fieldwork**: one connected 3D world with dishes,

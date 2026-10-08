@@ -11,6 +11,9 @@ importers:
       '@reactor-models/helios':
         specifier: ^1.0.1
         version: 1.0.1(react@19.2.6)
+      '@reactor-models/lingbot':
+        specifier: 1.0.1
+        version: 1.0.1(react@19.2.6)
       '@reactor-models/lingbot-world-2':
         specifier: 1.0.1
         version: 1.0.1(react@19.2.6)
@@ -295,6 +298,11 @@ packages:
 
   '@reactor-models/lingbot-world-2@1.0.1':
     resolution: {integrity: sha512-cfd5RXqGfxUsHA9GiHzaWs1JoYKgMOs+ViRj0o1+YvDlIvxAdb+vUYzBuQB10pvvustNcePtShmnQ7TDqfTv0A==}
+    peerDependencies:
+      react: '>=18'
+
+  '@reactor-models/lingbot@1.0.1':
+    resolution: {integrity: sha512-2YcONYBd7sournLHwmjaYMCDeGnQkhfRq5bxgOyveh8eooJ/rEO8Oy/I9+q76gRzwM8GCDfUz98asJtMQNxI4A==}
     peerDependencies:
       react: '>=18'
 
@@ -844,6 +852,13 @@ snapshots:
       - supports-color
 
   '@reactor-models/lingbot-world-2@1.0.1(react@19.2.6)':
+    dependencies:
+      '@reactor-team/js-sdk': 3.1.0(react@19.2.6)
+      react: 19.2.6
+    transitivePeerDependencies:
+      - supports-color
+
+  '@reactor-models/lingbot@1.0.1(react@19.2.6)':
     dependencies:
       '@reactor-team/js-sdk': 3.1.0(react@19.2.6)
       react: 19.2.6

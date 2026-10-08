@@ -7,9 +7,8 @@ from typing import Callable
 
 ROOM_PICK = '''"""Franka Panda task in a Reactor-generated room, for MuJoCo Playground (MJX).
 
-__ROBOT_TASK__. The scene uses a robot frame: the Panda base is at the origin and the task surface
-(geom "floor") is at z = 0, so PandaPickCube's reward, observations and termination apply unchanged.
-Only the object spawn region and the target region differ from the upstream environment.
+__ROBOT_TASK__. Uses PandaPickCube's actuators and state observations with the website's ordered
+task contract, task-specific rewards, randomized resets and termination on successful completion.
 """
 from typing import Any, Dict, Optional, Union
 
@@ -22,6 +21,7 @@ from mujoco_playground._src import mjx_env
 from mujoco_playground._src.manipulation.franka_emika_panda import panda
 from mujoco_playground._src.manipulation.franka_emika_panda import pick
 from mujoco_playground._src.mjx_env import State
+from .task_kernel import advance, shaping, CONTRACT_VERSION, HOLD_SECONDS
 
 ENV_NAME = "__ENV_NAME__"
 XML_PATH = epath.Path(__file__).parent / "xmls" / "__XML_NAME__"
@@ -32,7 +32,8 @@ TARGET_HIGH = __TARGET_HIGH__
 TASK_KIND = "__TASK_KIND__"
 LIFT_HEIGHT = __LIFT_HEIGHT__  # meters above the spawn height that count as lifted
 GOAL_TOLERANCE = 0.02
-CHECKS = ("grasped", "lifted", "in_goal", "released", "task_success")
+CHECKS = ("grasped", "lifted", "in_goal", "released", "task_success", "task_progress", "task_reward")
+TOTAL_STEPS = {"reach": 2, "push": 4, "lift": 4, "place": 6}[TASK_KIND]
 
 
 def default_config() -> config_dict.ConfigDict:
@@ -40,6 +41,8 @@ def default_config() -> config_dict.ConfigDict:
   # Portable default; pass config_overrides={"impl": "warp"} on NVIDIA GPUs.
   config.impl = "jax"
   config.njmax = 256
+  config.ctrl_dt = 0.04  # same 25 Hz control rate as the browser simulation
+  config.episode_length = 750  # 30 seconds for the complete manipulation sequence
   return config
 
 
@@ -64,28 +67,44 @@ class RoomPick(pick.PandaPickCube):
         for pad in ("left_finger_pad", "right_finger_pad")
     ]
     self._finger_qposadr = self._robot_qposadr[-2]
+    self._obj_dofadr = self._mj_model.jnt_dofadr[self._mj_model.body_jntadr[self._obj_body]]
+    self._hold_steps = max(1, round(HOLD_SECONDS / self.dt))
 
-  def task_checks(self, data) -> Dict[str, jax.Array]:
-    """Task success checked in code: the same definitions as the website's step checklist."""
-    box = data.xpos[self._obj_body]
-    grasped = (data.sensordata[self._pad_box_sensors[0]] > 0) & (data.sensordata[self._pad_box_sensors[1]] > 0)
-    lifted = grasped & (box[2] - SPAWN_LOW[2] >= LIFT_HEIGHT)
-    low, high = jp.array(TARGET_LOW) - GOAL_TOLERANCE, jp.array(TARGET_HIGH) + GOAL_TOLERANCE
-    in_goal = jp.all(box >= low) & jp.all(box <= high)
-    touching = (data.sensordata[self._pad_box_sensors[0]] > 0) | (data.sensordata[self._pad_box_sensors[1]] > 0)
-    released = in_goal & ~touching & (data.qpos[self._finger_qposadr] > 0.03)
-    success = (lifted & in_goal) if TASK_KIND == "lift" else released
-    return {"grasped": grasped, "lifted": lifted, "in_goal": in_goal, "released": released, "task_success": success}
+  def _task_observation(self, data, info):
+    contacts = sum((data.sensordata[adr] > 0).astype(int) for adr in self._pad_box_sensors)
+    return (data.site_xpos[self._gripper_site], data.xpos[self._obj_body], info["item_start"],
+            jp.linalg.norm(data.qvel[self._obj_dofadr:self._obj_dofadr + 3]), contacts,
+            data.qpos[self._finger_qposadr], jp.array(TARGET_LOW), jp.array(TARGET_HIGH))
+
+  def _get_obs(self, data, info):
+    # The policy sees task history, hold duration and the actual randomized starting position.
+    return jp.concatenate([super()._get_obs(data, info),
+                           jp.array([info["task_index"] / TOTAL_STEPS, info["task_held"] / self._hold_steps]),
+                           info["item_start"]])
 
   def step(self, state: State, action: jax.Array) -> State:
+    previous = state.info["task_index"]
     state = super().step(state, action)
-    checks = {name: value.astype(float) for name, value in self.task_checks(state.data).items()}
-    return state.replace(metrics={**state.metrics, **checks})
+    observation = self._task_observation(state.data, state.info)
+    index, held, checks = advance(jp, TASK_KIND, previous, state.info["task_held"], *observation, self._hold_steps)
+    dense = shaping(jp, TASK_KIND, previous, held, *observation, self._hold_steps)
+    success = checks["task_success"]
+    # Stage bonuses and a completion bonus; the running cost discourages stalling at an easy stage.
+    reward = (2.0 * (index - previous) + 10.0 * success
+              + self.dt * (dense - 1.0 - .01 * jp.mean(jp.square(action))) - 5.0 * state.done)
+    reward = jp.where(previous == TOTAL_STEPS, 0.0, reward)
+    info = {**state.info, "task_index": index, "task_held": held}
+    metrics = {**state.metrics, **{name: value.astype(float) for name, value in checks.items()},
+               "task_progress": index.astype(float) / TOTAL_STEPS, "task_reward": reward}
+    return state.replace(info=info, obs=self._get_obs(state.data, info), reward=reward,
+                         done=jp.maximum(state.done, success.astype(float)), metrics=metrics)
 
   def reset(self, rng: jax.Array) -> State:
     rng, rng_box, rng_target = jax.random.split(rng, 3)
     box_pos = jax.random.uniform(rng_box, (3,), minval=jp.array(SPAWN_LOW), maxval=jp.array(SPAWN_HIGH))
     target_pos = jax.random.uniform(rng_target, (3,), minval=jp.array(TARGET_LOW), maxval=jp.array(TARGET_HIGH))
+    if TASK_KIND == "reach":
+      target_pos = box_pos + jp.array([0.0, 0.0, 0.03])
     init_q = jp.array(self._init_q).at[self._obj_qposadr : self._obj_qposadr + 3].set(box_pos)
     data = mjx_env.make_data(
         self._mj_model,
@@ -106,7 +125,8 @@ class RoomPick(pick.PandaPickCube):
         **{k: 0.0 for k in self._config.reward_config.scales.keys()},
         **{name: jp.array(0.0, dtype=float) for name in CHECKS},
     }
-    info = {"rng": rng, "target_pos": target_pos, "reached_box": 0.0}
+    info = {"rng": rng, "target_pos": target_pos, "reached_box": 0.0, "item_start": box_pos,
+            "task_index": jp.array(0, dtype=int), "task_held": jp.array(0, dtype=int)}
     obs = self._get_obs(data, info)
     reward, done = jp.zeros(2)
     return State(data, obs, reward, done, metrics, info)
@@ -177,7 +197,7 @@ def mjx_checks(impl, steps):
   obs = np.asarray(state.obs)
   assert set(room_envs.room_pick.CHECKS) <= set(state.metrics), "task checks are missing from metrics"
   return {"impl": impl, "jit_seconds": round(compiled, 1), "observation_size": int(obs.shape[-1]),
-          "task_checks": ",".join(room_envs.room_pick.CHECKS),
+          "task_checks": ",".join(room_envs.room_pick.CHECKS), "task_contract": room_envs.room_pick.CONTRACT_VERSION,
           "action_size": int(env.action_size), "steps": steps, "mean_reward": round(float(np.mean(rewards)), 4),
           "episode_done": bool(float(state.done)), "mjx_finite": bool(np.isfinite(obs).all() and np.isfinite(rewards).all())}
 
@@ -348,24 +368,33 @@ def main():
   adr = env._obj_qposadr
   data = state.data.replace(qpos=state.data.qpos.at[adr:adr + 3].set(demo["box"]),
                             mocap_pos=state.data.mocap_pos.at[env._mocap_target, :].set(demo["goal"]))
-  state = state.replace(data=data, info={**state.info, "target_pos": jp.asarray(demo["goal"], dtype=float)})
+  state = state.replace(data=data, info={**state.info, "target_pos": jp.asarray(demo["goal"], dtype=float),
+                                       "item_start": jp.asarray(demo["box"], dtype=float)})
   step = jax.jit(env.step)
   per_tick = max(1, round(1 / float(demo["control_hz"]) / env.dt))
   scale = float(env._config.action_scale)
   checks = {name: 0.0 for name in room_envs.room_pick.CHECKS}
+  success_done, success_reward = False, False
   for target in demo["ctrl"]:
     for _ in range(per_tick):
       action = np.clip((target - np.asarray(state.data.ctrl)) / scale, -1, 1)
       state = step(state, jp.asarray(action, dtype=float))
       for name in checks:
         checks[name] = max(checks[name], float(state.metrics[name]))
+      if float(state.metrics["task_success"]) >= 1:
+        success_done = bool(float(state.done))
+        success_reward = float(state.reward) > 0
+        break
+    if success_done:
+      break
   result = {"impl": args.impl, "demo_steps": int(len(demo["ctrl"])), "env_steps": int(len(demo["ctrl"]) * per_tick),
+            "replay_success_terminates": success_done, "replay_success_reward": success_reward,
             **{f"replay_{name}": value for name, value in checks.items()}}
   print(json.dumps(result, indent=2))
   if args.json:
     with open(args.json, "w") as handle:
       json.dump(result, handle, indent=2)
-  sys.exit(0 if checks["task_success"] >= 1 else 1)
+  sys.exit(0 if checks["task_success"] >= 1 and success_done and success_reward else 1)
 
 
 if __name__ == "__main__":
@@ -406,10 +435,19 @@ env = registry.load(room_envs.ENV_NAME, config_overrides={"impl": "warp"})
 - `room_envs/xmls/__XML_NAME__`: the room as MJX-safe boxes and planes. It includes Menagerie's `mjx_panda.xml` and
   Playground's `sensor.xml`.
 - `room_envs/room_pick.py`: `PandaPickCube` with this room's object spawn and target regions.
+- `room_envs/task_kernel.py`: the same ordered success contract used by the browser simulator.
 - `manifest.json`: provenance (source video, Reactor session, reconstruction), checks, file hashes.
 - `references/`: the beginning image, the Reactor arrival frame and scan video, the plan and the reconstruction.
 
 ## Notes
+
+Actions are eight joint/gripper actuator increments at 25 Hz. Observations include robot/object state,
+the current task stage, hold duration and randomized object start. Episodes end on ordered task success,
+invalid simulation state, an out-of-bounds object, or the 30-second training wrapper limit.
+Rewards combine phase-specific distance shaping, a bonus for each completed step and a completion bonus.
+Lift requires both finger contacts and a continuous one-second hold. Place requires reach, grasp, lift,
+carry, settling, then release and gripper retreat, in order. This is a rigid-object robot subtask derived
+from human footage; cloth deformation, washing and fluid dynamics are not simulated.
 
 The room is a primitive approximation reconstructed from a Reactor-generated walkthrough, with estimated scale.
 Furniture is static, and only the gripper's hand capsule and finger pads collide, following Playground's Panda models.

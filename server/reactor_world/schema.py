@@ -35,7 +35,7 @@ class TaskObject(StrictModel):
 
 
 class RobotTask(StrictModel):
-    kind: Literal["lift", "place"]
+    kind: Literal["lift", "place", "reach", "push"]
     object: str = Field(pattern=OBJECT_ID, description="id of the small rigid object the robot moves")
     anchor: str | None = Field(default=None, pattern=OBJECT_ID, description="for place: id of the reference object")
     relation: Literal["beside", "on", "in"] | None = Field(default=None, description="for place: where relative to the anchor")
@@ -60,7 +60,7 @@ class WorldTask(StrictModel):
             reason = f"robot object {task.object} is not one of the task objects"
         else:
             width, depth, height = objects[task.object].size
-            if min(width, depth) > GRASP_WIDTH:
+            if task.kind in {"lift", "place"} and min(width, depth) > GRASP_WIDTH:
                 reason = f"{task.object} is {min(width, depth) * 100:.0f} cm across; the Panda gripper opens to 8 cm"
             elif not .015 <= height <= .35:
                 reason = f"{task.object} is {height * 100:.0f} cm tall; graspable objects are 1.5–35 cm"
@@ -115,6 +115,14 @@ class ExportSummary(StrictModel):
     checks: dict[str, bool | str | float | int] | None = None
 
 
+class FootageSeed(StrictModel):
+    """The real frame from data/ that seeds a room's Reactor world (provenance for the room)."""
+    source_id: str = Field(pattern=r"^[0-9]{1,6}$")
+    file: str
+    t: float = Field(ge=0)
+    task_type: str | None = None
+
+
 class WorldRoom(StrictModel):
     path: str = Field(pattern=PATH_PATTERN)
     parent: str | None = None
@@ -132,10 +140,11 @@ class WorldRoom(StrictModel):
     physics: PhysicsSummary | None = None
     export: ExportSummary | None = None
     robot_demo: DemoSummary | None = None
+    footage: FootageSeed | None = None
 
 
 class SourceRef(StrictModel):
-    id: str = Field(pattern=r"^[0-9]{1,6}$")
+    id: str = Field(pattern=r"^(?:[0-9]{1,6}|gym-[a-z][a-z0-9-]{0,39})$")
     file: str
     t: float = Field(ge=0)
     task_type: str | None = None
@@ -167,6 +176,8 @@ class WorldRoomSpec(RoomSpec):
 # Gemini planning responses (validated, then expanded into WorldRoom records).
 class PlanRoom(StrictModel):
     title: str = Field(max_length=80, description="imperative task name, at most 6 words")
+    frame: int | None = Field(default=None, ge=0, description="index of the footage frame this room is built from")
+    camera_pitch_hint: Literal["down", "level"] = "level"
     relation: ChildRelation
     door_label: str = Field(max_length=40, description="short room name shown on the door, at most 3 words")
     prompt: str = Field(max_length=1200, description="eye-level arrival view of this room for a world model, at most 600 characters")

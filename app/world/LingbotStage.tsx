@@ -7,14 +7,14 @@ import {
   useLingbotWorld2,
   useLingbotWorld2ChunkComplete,
   useLingbotWorld2CommandError,
-  type LingbotWorld2ChunkCompleteMessage,
 } from "@reactor-models/lingbot-world-2";
-import { ClipDownloadButton, ClipPlayer, RecordingError, type Clip, type ReactorStatus } from "@reactor-team/js-sdk";
+import { LingbotMainVideoView, LingbotProvider, useLingbot, useLingbotChunkComplete, useLingbotCommandError } from "@reactor-models/lingbot";
+import { ClipDownloadButton, ClipPlayer, RecordingError, type Clip, type FileRef, type ReactorError, type ReactorStatus } from "@reactor-team/js-sdk";
 import { IDLE_AXES, MOVEMENT_KEYS, actionString, axesFromInput, diffAxes, isTypingTarget, normalizeKey, rotationSpeedFor,
   type Axes, type AxisCommand, type Drag } from "./lib/controls";
 import { ORIGIN, SIM_CHUNK_MS, aimAssist, doorAhead, doorLayout, integrate, nearestDoor, simulatedChunk, spreadBearings,
   type ChunkReport, type Door, type Pose } from "./lib/navigation";
-import { LINGBOT_COST_PER_SECOND, capacityRetryDelay, isCapacityError } from "./lib/reactor";
+import { CAPACITY_RETRY_SECONDS, ENGINES, capacityRetryDelay, combinedMovement, isCapacityError, otherEngine, type WorldEngine } from "./lib/reactor";
 import { formatSeconds, seedImage } from "./lib/rooms";
 import { tokenResolver } from "./lib/tokens";
 import type { World, WorldRoom } from "./lib/types";
@@ -27,10 +27,30 @@ const DRAG_RELEASE_MS = 140;
 const LEVEL_DEG = 10; // per latent frame (~6 per second): 1.2 s raises the view about 72°
 const LEVEL_MS = 1200;
 
-// The session is bound to the token that created it, so one token is memoized for its lifetime.
-const fetchWorldToken = tokenResolver("lingbot-world-2");
 
-type LingbotApi = ReturnType<typeof useLingbotWorld2>;
+// A session is bound to the token that created it, so one token per model is memoized for its lifetime.
+const TOKENS: Record<WorldEngine, () => Promise<string>> = {
+  world2: tokenResolver(ENGINES.world2.model),
+  v1: tokenResolver(ENGINES.v1.model),
+};
+
+/** The commands the stage needs, identical for LingBot World 2 and LingBot except how movement is sent. */
+interface LingbotApi {
+  uploadFile: (file: Blob, options?: { name?: string }) => Promise<FileRef>;
+  reset: () => Promise<unknown>;
+  setImage: (params: { image: FileRef }) => Promise<unknown>;
+  setPrompt: (params: { prompt: string }) => Promise<unknown>;
+  setSeed: (params: { seed: number }) => Promise<unknown>;
+  setRotationSpeedDeg: (params: { rotation_speed_deg: number }) => Promise<unknown>;
+  start: () => Promise<unknown>;
+  pause: () => Promise<unknown>;
+  resume: () => Promise<unknown>;
+  setLookHorizontal: (params: { look_horizontal: Axes["look_horizontal"] }) => Promise<unknown>;
+  setLookVertical: (params: { look_vertical: Axes["look_vertical"] }) => Promise<unknown>;
+  setMovement: (axes: Pick<Axes, "move_longitudinal" | "move_lateral">) => Promise<unknown>;
+  requestClip: (seconds: number) => Promise<Clip>;
+}
+type ChunkMessage = { active_action: string; frames_emitted: number };
 
 function everyAxis(axes: Axes): AxisCommand[] {
   return [
@@ -46,19 +66,49 @@ function message(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause);
 }
 
-/** Lives inside the provider only while the player has opted into a paid session. */
-function LiveSession({ apiRef, streaming, onStatus, onChunk, onError }: {
+interface SessionProps {
   apiRef: MutableRefObject<LingbotApi | null>; streaming: boolean;
-  onStatus: (status: ReactorStatus) => void; onChunk: (chunk: LingbotWorld2ChunkCompleteMessage) => void; onError: (text: string) => void;
-}) {
-  const lb = useLingbotWorld2();
-  apiRef.current = lb;
+  onStatus: (status: ReactorStatus) => void; onChunk: (chunk: ChunkMessage) => void; onError: (text: string) => void;
+}
+
+function useSessionEffects(api: LingbotApi, status: ReactorStatus, lastError: ReactorError | undefined,
+  { apiRef, onStatus, onError }: SessionProps) {
+  apiRef.current = api;
   useEffect(() => () => { apiRef.current = null; }, [apiRef]);
-  useEffect(() => { onStatus(lb.status); }, [lb.status, onStatus]);
-  useEffect(() => { if (lb.lastError) onError(lb.lastError.message); }, [lb.lastError, onError]);
-  useLingbotWorld2ChunkComplete(onChunk);
-  useLingbotWorld2CommandError(failure => onError(`${failure.command}: ${failure.reason}`));
-  return <LingbotWorld2MainVideoView className={`rw-video${streaming ? " rw-visible" : ""}`} videoObjectFit="cover"
+  useEffect(() => { onStatus(status); }, [status, onStatus]);
+  useEffect(() => { if (lastError) onError(lastError.message); }, [lastError, onError]);
+}
+
+/** Lives inside the provider only while the player has opted into a paid session. */
+function World2Session(props: SessionProps) {
+  const lb = useLingbotWorld2();
+  const api: LingbotApi = {
+    uploadFile: (file, options) => lb.uploadFile(file, options), reset: lb.reset, setImage: lb.setImage, setPrompt: lb.setPrompt,
+    setSeed: lb.setSeed, setRotationSpeedDeg: lb.setRotationSpeedDeg, start: lb.start, pause: lb.pause, resume: lb.resume,
+    setLookHorizontal: lb.setLookHorizontal, setLookVertical: lb.setLookVertical, requestClip: lb.requestClip,
+    setMovement: axes => Promise.all([lb.setMoveLongitudinal({ move_longitudinal: axes.move_longitudinal }),
+      lb.setMoveLateral({ move_lateral: axes.move_lateral })]),
+  };
+  useSessionEffects(api, lb.status, lb.lastError, props);
+  useLingbotWorld2ChunkComplete(props.onChunk);
+  useLingbotWorld2CommandError(failure => props.onError(`${failure.command}: ${failure.reason}`));
+  return <LingbotWorld2MainVideoView className={`rw-video${props.streaming ? " rw-visible" : ""}`} videoObjectFit="cover"
+    style={{ position: "absolute", inset: 0, background: "transparent" }} />;
+}
+
+/** LingBot (v1): a separate GPU pool with the same controls, used when LingBot World 2 has no free capacity. */
+function LingbotSession(props: SessionProps) {
+  const lb = useLingbot();
+  const api: LingbotApi = {
+    uploadFile: (file, options) => lb.uploadFile(file, options), reset: lb.reset, setImage: lb.setImage, setPrompt: lb.setPrompt,
+    setSeed: lb.setSeed, setRotationSpeedDeg: lb.setRotationSpeedDeg, start: lb.start, pause: lb.pause, resume: lb.resume,
+    setLookHorizontal: lb.setLookHorizontal, setLookVertical: lb.setLookVertical, requestClip: lb.requestClip,
+    setMovement: axes => lb.setMovement({ movement: combinedMovement(axes.move_longitudinal, axes.move_lateral) }),
+  };
+  useSessionEffects(api, lb.status, lb.lastError, props);
+  useLingbotChunkComplete(props.onChunk);
+  useLingbotCommandError(failure => props.onError(`${failure.command}: ${failure.reason}`));
+  return <LingbotMainVideoView className={`rw-video${props.streaming ? " rw-visible" : ""}`} videoObjectFit="cover"
     style={{ position: "absolute", inset: 0, background: "transparent" }} />;
 }
 
@@ -77,6 +127,9 @@ export interface StageProps {
 
 export function LingbotStage({ world, room, reactorConfigured, onNavigate, onRequestScan, pip = false, inputEnabled = true, onShowWorld }: StageProps) {
   const apiRef = useRef<LingbotApi | null>(null);
+  const [engine, setEngine] = useState<WorldEngine>("world2");
+  const engineRef = useRef(engine);
+  engineRef.current = engine;
   const [wanted, setWanted] = useState(false);
   const [status, setStatus] = useState<ReactorStatus>("disconnected");
   const live = wanted && status === "ready";
@@ -112,7 +165,7 @@ export function LingbotStage({ world, room, reactorConfigured, onNavigate, onReq
   const statusRef = useRef<ReactorStatus>("disconnected");
   const enterRef = useRef<(door: Door) => void>(() => {});
 
-  const [retry, setRetry] = useState<{ attempt: number; until: number } | null>(null);
+  const [retry, setRetry] = useState<{ attempt: number; until: number; engine: WorldEngine } | null>(null);
   const [clock, setClock] = useState(() => Date.now());
   const retryAttemptRef = useRef(0);
   const retryTimerRef = useRef<number | null>(null);
@@ -129,21 +182,25 @@ export function LingbotStage({ world, room, reactorConfigured, onNavigate, onReq
     setRetry(null);
   }, []);
 
-  // Reactor answers 429 when LingBot has no free capacity or the session quota is spent: release the failed session and
-  // try again after 10, 20 and 40 s. Every other error is reported as is.
+  // Reactor answers 429 when a model's GPU pool is full or the session quota is spent. Capacity shortages last minutes, so
+  // keep trying for about four minutes, alternating between LingBot World 2 and LingBot (separate pools). Every other
+  // error is reported as is.
   const failLive = useCallback((text: string) => {
     const delay = isCapacityError(text) ? capacityRetryDelay(retryAttemptRef.current) : null;
     if (delay === null) {
       retryAttemptRef.current = 0;
       setRetry(null);
-      setError(text);
+      setError(isCapacityError(text) ? "Reactor's LingBot servers stayed full for several minutes. Try again shortly; the recorded Reactor scan stays explorable meanwhile." : text);
       return;
     }
     retryAttemptRef.current += 1;
+    const next = otherEngine(engineRef.current);
     setWanted(false);
     setConnecting(false);
     setError(null);
-    setRetry({ attempt: retryAttemptRef.current, until: Date.now() + delay * 1000 });
+    setEngine(next);
+    engineRef.current = next;
+    setRetry({ attempt: retryAttemptRef.current, until: Date.now() + delay * 1000, engine: next });
     if (retryTimerRef.current !== null) window.clearTimeout(retryTimerRef.current);
     retryTimerRef.current = window.setTimeout(() => {
       retryTimerRef.current = null;
@@ -165,24 +222,20 @@ export function LingbotStage({ world, room, reactorConfigured, onNavigate, onReq
   const doorsRef = useRef(doors);
   doorsRef.current = doors;
 
-  const dispatch = useCallback((command: AxisCommand) => {
-    const l = apiRef.current;
-    if (!l) return Promise.resolve(undefined);
-    switch (command.method) {
-      case "setMoveLongitudinal": return l.setMoveLongitudinal(command.params);
-      case "setMoveLateral": return l.setMoveLateral(command.params);
-      case "setLookHorizontal": return l.setLookHorizontal(command.params);
-      case "setLookVertical": return l.setLookVertical(command.params);
-    }
-  }, []);
-
   const syncAxes = useCallback((force = false) => {
-    if (!liveRef.current || transitionRef.current) return;
+    const l = apiRef.current;
+    if (!liveRef.current || transitionRef.current || !l) return;
     const next = axesRef.current;
-    const commands = force ? everyAxis(next) : diffAxes(sentRef.current, next);
+    const commands: AxisCommand[] = force ? everyAxis(next) : diffAxes(sentRef.current, next);
     sentRef.current = next;
-    for (const command of commands) void dispatch(command).catch(report);
-  }, [dispatch, report]);
+    if (commands.some(command => command.method === "setMoveLongitudinal" || command.method === "setMoveLateral")) {
+      void l.setMovement(next).catch(report);
+    }
+    for (const command of commands) {
+      if (command.method === "setLookHorizontal") void l.setLookHorizontal(command.params).catch(report);
+      if (command.method === "setLookVertical") void l.setLookVertical(command.params).catch(report);
+    }
+  }, [report]);
 
   const updateAxes = useCallback(() => {
     axesRef.current = axesFromInput(keysRef.current, dragRef.current?.delta ?? null, 1);
@@ -254,8 +307,8 @@ export function LingbotStage({ world, room, reactorConfigured, onNavigate, onReq
       // Keep the live world continuous: steer the next chunks toward the target room while walking through.
       setNotice(`Walking into ${target.title}…`);
       void l.setPrompt({ prompt: target.prompt }).catch(report);
-      void l.setMoveLongitudinal({ move_longitudinal: "forward" }).catch(report);
       sentRef.current = { ...sentRef.current, move_longitudinal: "forward" };
+      void l.setMovement(sentRef.current).catch(report);
       window.setTimeout(finish, WALK_IN_MS);
     } else {
       setFading(true);
@@ -438,7 +491,7 @@ export function LingbotStage({ world, room, reactorConfigured, onNavigate, onReq
     markInput();
     setConnecting(true);
     try {
-      await fetchWorldToken(); // fail fast (and keep the offline world) when the server cannot mint a token
+      await TOKENS[engineRef.current](); // fail fast (and keep the offline world) when the server cannot mint a token
       setSeconds(0);
       setWanted(true);
     } catch (cause) {
@@ -509,7 +562,8 @@ export function LingbotStage({ world, room, reactorConfigured, onNavigate, onReq
   const backdrop = room.media.scan;
   const still = image ?? world.start_url;
   const busy = connecting || (wanted && status !== "ready");
-  const mode = live ? (idle === "paused" ? "Paused · resume by moving" : streaming ? "Live · LingBot World 2 · 1664×960 @ 48 fps" : "Starting Reactor world…")
+  const engineInfo = ENGINES[engine];
+  const mode = live ? (idle === "paused" ? "Paused · resume by moving" : streaming ? `Live · ${engineInfo.label} · ${engineInfo.detail}` : "Starting Reactor world…")
     : busy ? `Reactor ${wanted ? status : "connecting"}…`
     : reactorConfigured ? "Offline preview" : "Offline preview · set REACTOR_API_KEY to go live";
 
@@ -521,23 +575,26 @@ export function LingbotStage({ world, room, reactorConfigured, onNavigate, onReq
       {!streaming && (backdrop
         ? <video key={backdrop} className="rw-backdrop" src={backdrop} autoPlay muted loop playsInline aria-label={`Recorded Reactor scan of ${room.title}`} />
         : <img key={still} className="rw-backdrop" src={still} alt={room.path === "root" ? "Beginning image" : `Reactor arrival frame of ${room.title}`} draggable={false} />)}
-      {wanted && <LingbotWorld2Provider jwtToken={fetchWorldToken} connectOptions={{ autoConnect: true }}>
-        <LiveSession apiRef={apiRef} streaming={streaming} onStatus={onLiveStatus} onChunk={onLiveChunk} onError={failLive} />
+      {wanted && engine === "world2" && <LingbotWorld2Provider jwtToken={TOKENS.world2} connectOptions={{ autoConnect: true }}>
+        <World2Session apiRef={apiRef} streaming={streaming} onStatus={onLiveStatus} onChunk={onLiveChunk} onError={failLive} />
       </LingbotWorld2Provider>}
+      {wanted && engine === "v1" && <LingbotProvider jwtToken={TOKENS.v1} connectOptions={{ autoConnect: true }}>
+        <LingbotSession apiRef={apiRef} streaming={streaming} onStatus={onLiveStatus} onChunk={onLiveChunk} onError={failLive} />
+      </LingbotProvider>}
       {overlay && <img className="rw-overlay" src={overlay} alt="" aria-hidden="true" draggable={false} />}
       <div className={`rw-fade${fading ? " rw-visible" : ""}`} aria-hidden="true" />
     </div>
     <WorldHud world={world} room={room} pose={pose} doors={doors} nearDoor={nearDoor} notice={notice} onEnterDoor={enterDoor} />
     <div className="rw-session">
       <span className={`rw-status${live && streaming ? " rw-live" : ""}`} data-testid="reactor-world-status"><i />{mode}</span>
-      {live && <span className="rw-cost" title="Reactor bills connected wall-clock time">{formatSeconds(seconds)} · ${(seconds * LINGBOT_COST_PER_SECOND).toFixed(2)}</span>}
+      {live && <span className="rw-cost" title="Reactor bills connected wall-clock time">{formatSeconds(seconds)} · ${(seconds * engineInfo.costPerSecond).toFixed(2)}</span>}
       {wanted
         ? <>
           {live && <button className="rw-button" onClick={() => void capture()} disabled={clipBusy || !streaming}>{clipBusy ? "Capturing…" : "Capture 10 s clip"}</button>}
           <button className="rw-button" onClick={leave}>Leave Reactor</button>
         </>
         : <button className="rw-button rw-primary" onClick={() => void connect()} disabled={!reactorConfigured || connecting}
-          title={reactorConfigured ? "Starts a paid Reactor LingBot World 2 session (~$0.42/min)" : "Set REACTOR_API_KEY in .env"}>
+          title={reactorConfigured ? "Starts a paid Reactor LingBot World 2 session (~$0.42/min); falls back to LingBot when World 2 is full" : "Set REACTOR_API_KEY in .env"}>
           {connecting ? "Connecting…" : "Enter Reactor world"}
         </button>}
     </div>
@@ -554,17 +611,17 @@ export function LingbotStage({ world, room, reactorConfigured, onNavigate, onReq
     {error && <p className="rw-error" role="alert">{error}<button aria-label="Dismiss error" onClick={() => setError(null)}>×</button></p>}
     {retry && <div className="rw-retry" role="status">
       <i className="rw-spinner" />
-      <span>Reactor LingBot is at capacity — retrying in {retryIn} s <small>(attempt {retry.attempt} of 3)</small></span>
+      <span>Reactor {ENGINES[otherEngine(retry.engine)].label} is full — trying {ENGINES[retry.engine].label} in {retryIn} s <small>(attempt {retry.attempt} of {CAPACITY_RETRY_SECONDS.length})</small></span>
       <button className="rw-button" onClick={cancelRetry}>Cancel</button>
     </div>}
     {pip && <button className="rw-pip-label" onClick={onShowWorld} aria-label="Show the Reactor world">
-      <span><i className={live && streaming ? "rw-live-dot" : undefined} />Realistic world · Reactor LingBot World 2</span>
+      <span><i className={live && streaming ? "rw-live-dot" : undefined} />Realistic world · Reactor {engineInfo.label}</span>
     </button>}
     {clip && <div className="rw-modal" role="dialog" aria-label="Captured Reactor clip" onClick={() => setClip(null)}>
       <div onClick={event => event.stopPropagation()}>
         <header><span className="rw-eyebrow">REACTOR CLIP · {clip.kind}</span><button className="rw-button" onClick={() => setClip(null)}>Close</button></header>
-        <ClipPlayer clip={clip} getJwt={fetchWorldToken} onError={cause => setError(cause.message)} className="rw-clip" />
-        <ClipDownloadButton clip={clip} getJwt={fetchWorldToken} filename={`${world.id}-${room.path}-clip.mp4`} onError={cause => setError(cause.message)} />
+        <ClipPlayer clip={clip} getJwt={TOKENS[engine]} onError={cause => setError(cause.message)} className="rw-clip" />
+        <ClipDownloadButton clip={clip} getJwt={TOKENS[engine]} filename={`${world.id}-${room.path}-clip.mp4`} onError={cause => setError(cause.message)} />
       </div>
     </div>}
   </section>;

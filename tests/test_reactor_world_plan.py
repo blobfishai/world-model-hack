@@ -3,7 +3,7 @@ import json
 from reactor_world import gemini, planner
 from reactor_world.schema import HubPlan, RobotTask, SourceRef, TaskObject, WorldRoomSpec, WorldTask
 
-from reactor_world_fixtures import children_plan, hub_plan
+from reactor_world_fixtures import children_plan, footage_plan, hub_plan
 
 
 def test_robot_task_feasibility_follows_the_panda_gripper():
@@ -53,4 +53,15 @@ def test_structured_output_schemas_are_portable():
         text = json.dumps(schema)
         assert "$ref" not in text and "anyOf" not in text
     robot = gemini.portable_schema(HubPlan)["properties"]["rooms"]["items"]["properties"]["task"]["properties"]["robot_task"]
-    assert robot["type"] == "object" and robot["properties"]["kind"]["enum"] == ["lift", "place"]
+    assert robot["type"] == "object" and robot["properties"]["kind"]["enum"] == ["lift", "place", "reach", "push"]
+
+
+def test_footage_rooms_keep_their_real_frame_and_pitch():
+    candidates = [{"index": i, "source_id": str(i + 1), "file": f"data/000/{i + 1}_video.mp4", "t": 2. + i,
+                   "task_type": "folding_laundry" if i else None} for i in range(8)]
+    world = planner.build_world("0123456789abcdef", SourceRef(id="3", file="x", t=0), footage_plan(), candidates)
+    room = world.rooms["1"]
+    assert room.footage.source_id == "2" and room.footage.t == 3. and room.footage.task_type == "folding_laundry"
+    assert room.camera_pitch_hint == "down" and world.rooms["0"].camera_pitch_hint == "level"
+    imagined = planner.build_world("0123456789abcdef", SourceRef(id="3", file="x", t=0), hub_plan())
+    assert imagined.rooms["1"].footage is None and imagined.rooms["1"].camera_pitch_hint == "level"

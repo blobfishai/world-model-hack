@@ -40,3 +40,12 @@ def counter_room(room_id="w0123abcd-0", *, sponge_size=(.09, .06, .04), against_
     ]
     return WorldRoomSpec.model_validate({"room_id": room_id, "name": "kitchen corner", "dimensions": [3, 3, 2.6],
                                          "objects": objects})
+
+
+def footage_plan() -> HubPlan:
+    """A plan whose rooms are real footage frames 0–5."""
+    plan = hub_plan()
+    for index, room in enumerate(plan.rooms):
+        room.frame = index
+        room.camera_pitch_hint = "down" if index % 2 else "level"
+    return plan

@@ -17,6 +17,9 @@ export function worldRoom(path: string = "root") {
     image: `/robot-worlds/${theme.id}.png`, video: `/robot-worlds/${theme.id}.mp4` };
 }
 export type WorldRoom = ReturnType<typeof worldRoom>;
+export function worldGymUrl(room: WorldRoom) {
+  return `/world?${new URLSearchParams({ source: `gym:${room.theme.id}`, task: room.kind, from: room.path })}`;
+}
 export function worldChildren(path: string) {
   if (!validWorldPath(path)) throw new Error("Unknown robot room");
   if (path !== "root" && path.split(".").length >= 12) return [];

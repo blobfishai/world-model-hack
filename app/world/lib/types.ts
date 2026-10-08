@@ -20,7 +20,7 @@ export interface TaskObject {
 }
 
 export interface RobotTask {
-  kind: "lift" | "place";
+  kind: "lift" | "place" | "reach" | "push";
   object: string; // TaskObject id
   anchor: string | null; // place relative to this object id
   relation: "beside" | "on" | "in" | null;
@@ -73,6 +73,8 @@ export interface WorldRoom {
   export: ExportSummary | null;
   robot_demo: DemoSummary | null;
   steps?: TaskStepView[]; // the task program checked in simulation, from server/reactor_world/tasks.py
+  // The real data/ footage frame this room's Reactor world is built from (null for rooms Reactor imagined).
+  footage?: { source_id: string; file: string; t: number; task_type: string | null } | null;
 }
 
 export interface DemoSummary {
@@ -89,7 +91,7 @@ export interface DemoSummary {
 // `${NEXT_PUBLIC_ROOM_SIM_WS_URL ?? ws://<host>:8000}/worlds/robot-sessions/{id}`. Each tick (25 Hz) the server sends
 // one binary JPEG frame followed by one JSON RobotState text message. Close with DELETE /robot-sessions/{id}.
 // Robot frame: +x away from the Panda base over the task surface, +y to the robot's left, +z up.
-export type TaskStepKind = "reach" | "grasp" | "lift" | "hold" | "carry" | "place" | "release";
+export type TaskStepKind = "reach" | "contact" | "push" | "settle" | "grasp" | "lift" | "hold" | "carry" | "place" | "release";
 export interface TaskStepView { id: string; kind: TaskStepKind; title: string; done: boolean; current: boolean }
 export interface RobotMetrics {
   goal_distance_m: number;
@@ -113,7 +115,7 @@ export interface RobotSessionInfo {
   width: number;
   height: number;
   fps: number;
-  kind: "lift" | "place";
+  kind: "lift" | "place" | "reach" | "push";
   state: RobotState;
   layout: { spawn: [number[], number[]]; goal: [number[], number[]]; support: string; object: string; base_side: string };
 }

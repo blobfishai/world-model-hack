@@ -18,8 +18,8 @@ export function composeGymPrompt(room: WorldRoom, phase: TaskPhase, walking = fa
   const object = room.theme.object;
   const base = `Photorealistic ${room.theme.name} robot workcell. ${room.theme.description} Exactly one white seven-joint Franka Panda arm with black joint covers, metal parallel fingers, cabling and a bolted base. Exactly one ${object} and one receiving tray on its workbench. Detailed materials, realistic shadows, reflections and worn surfaces. The robot base, workbench and room landmarks keep their positions.`;
   const camera = walking
-    ? "External eye-level view of the complete workbench and its single bench-mounted arm from the aisle. Movement input moves the observer through the room; look input turns the view. The robot base stays bolted to the same right-hand bench as the observer walks."
-    : "External eye-level view of the complete workbench and its single bench-mounted arm from across the aisle. Camera position holds still while movement input is idle. Only look input turns the view. The whole arm, its bolted base and the bench stay in the same wide framing.";
+    ? "External eye-level view of the complete workbench and its single bench-mounted arm from the aisle. Movement input moves the observer through the room; look input turns the view. The robot base stays bolted to the same workbench as the observer walks."
+    : "External eye-level view of the complete workbench and its single bench-mounted arm from across the aisle. Camera position holds still while movement input is idle. Only look input turns the view. No camera zoom or close-up of the fingers. The whole arm, its bolted base and the bench stay in the same wide framing.";
   const event = instruction.trim()
     ? `The robot performs this task slowly: ${instruction.trim().replace(/\s+/g, " ").slice(0, 220)}. Keep the same arm, object, workbench and environment. The robot holds its final pose.`
     : ({
@@ -27,12 +27,12 @@ export function composeGymPrompt(room: WorldRoom, phase: TaskPhase, walking = fa
     approach: `The robot's articulated joints slowly lower the open fingers to either side of the ${object}. It finishes with the fingers beside the object and holds this pose.`,
     grasp: room.kind === "push"
       ? `The same arm closes its empty fingers and brings their flat outer face against the side of the ${object}. The object remains supported by the workbench. The arm holds this contact pose.`
-      : `The same arm's single two-finger gripper closes gently around the sides of the ${object}. The object remains on the workbench. The same bolted robot base remains visible at the right-hand bench. The gripper finishes closed and holds still.`,
+      : `The same arm's single two-finger gripper closes gently around the sides of the ${object}. The object remains on the workbench. The same bolted robot base remains visible at the same workbench. The gripper finishes closed and holds still.`,
     execute: room.kind === "push"
       ? `The closed fingers move horizontally, pushing the ${object} across the workbench toward the receiving tray. The object slides along the surface and comes to rest beside the tray.`
       : room.kind === "reach"
         ? `The robot gently adjusts its wrist until the open fingers are centered just above the ${object}. The arm finishes aligned with the object and holds still.`
-        : `The same arm's single gripper slowly lifts the ${object} a hand's width above the workbench. The same bolted base stays on the right-hand bench. The object remains between the two fingers. The gripper finishes raised and holds still.`,
+        : `The same arm's single gripper slowly lifts the ${object} a hand's width above the workbench. The same bolted base stays on the same workbench. The object remains between the two fingers. The gripper finishes raised and holds still.`,
     release: room.kind === "lift"
       ? `The robot lowers the ${object} into the receiving tray, opens both fingers, then retracts slightly. The object rests in the tray and the robot holds its final pose.`
       : `The robot retracts its arm slightly and holds still. The ${object} stays resting on the workbench at its current position.`,

@@ -7,8 +7,9 @@ from typing import Literal
 import numpy as np
 
 from .schema import WorldTask
+from .task_kernel import advance
 
-StepKind = Literal["reach", "grasp", "lift", "hold", "carry", "place", "release"]
+StepKind = Literal["reach", "contact", "push", "settle", "grasp", "lift", "hold", "carry", "place", "release"]
 LIFT_HEIGHT = {"lift": .15, "place": .05}
 HOLD_STEPS = 25  # one second at the simulator's 25 Hz control rate
 
@@ -27,6 +28,11 @@ def program(task: WorldTask) -> list[Step]:
         return []
     labels = {o.id: o.label for o in task.objects}
     item = labels.get(robot.object, robot.object.replace("_", " "))
+    if robot.kind == "reach":
+        return [Step("reach", "reach", f"Reach above the {item}"), Step("hold", "hold", "Hold the open gripper steady for a second")]
+    if robot.kind == "push":
+        return [Step("reach", "reach", f"Approach the {item}"), Step("contact", "contact", "Touch it with the fingers"),
+                Step("push", "push", "Push it along the surface to the goal"), Step("settle", "settle", "Let it settle on the goal")]
     steps = [Step("reach", "reach", f"Reach the {item}"), Step("grasp", "grasp", "Close both fingers on it")]
     if robot.kind == "lift":
         return steps + [Step("lift", "lift", "Lift it 15 cm off the surface"), Step("hold", "hold", "Hold it steady for a second")]
@@ -76,12 +82,23 @@ class Progress:
     def satisfied(self, step: Step, o: Observation) -> bool:
         raised = o.item[2] - o.start[2]
         if step.kind == "reach":
-            return bool(np.linalg.norm(o.gripper[:2] - o.item[:2]) < .03 and abs(o.gripper[2] - o.item[2]) < .045)
+            return bool(np.linalg.norm(o.gripper[:2] - o.item[:2]) < (.08 if self.kind == "push" else .03) and abs(o.gripper[2] - o.item[2]) < .045)
+        if step.kind == "contact":
+            return o.contacts > 0
+        if step.kind == "push":
+            return self.in_goal(o.item) and abs(raised) < .025 and np.linalg.norm(o.item[:2] - o.start[:2]) >= .1
+        if step.kind == "settle":
+            self.held = self.held + 1 if self.in_goal(o.item) and abs(raised) < .025 and o.speed < .05 else 0
+            return self.held >= HOLD_STEPS
         if step.kind == "grasp":
             return o.contacts == 2
         if step.kind == "lift":
             return o.contacts == 2 and raised >= LIFT_HEIGHT[self.kind]
         if step.kind == "hold":
+            if self.kind == "reach":
+                above = np.linalg.norm(o.gripper[:2] - o.item[:2]) < .03 and .015 <= o.gripper[2] - o.item[2] <= .045
+                self.held = self.held + 1 if above and o.opening > .03 and o.contacts == 0 and abs(raised) < .01 else 0
+                return self.held >= HOLD_STEPS
             self.held = self.held + 1 if o.contacts == 2 and raised >= LIFT_HEIGHT["lift"] - .02 and o.speed < .1 else 0
             return self.held >= HOLD_STEPS
         if step.kind == "carry":
@@ -94,13 +111,16 @@ class Progress:
         return False
 
     def update(self, o: Observation) -> None:
-        while self.index < len(self.steps) and self.satisfied(self.steps[self.index], o):
-            self.done[self.index] = True
-            self.index += 1
+        if not self.steps:
+            return
+        index, held, _ = advance(np, self.kind, self.index, self.held, o.gripper, o.item, o.start,
+                                 o.speed, o.contacts, o.opening, self.goal_low, self.goal_high, HOLD_STEPS)
+        self.index, self.held = int(index), int(held)
+        self.done = [i < self.index for i in range(len(self.steps))]
 
     def metrics(self, o: Observation) -> dict:
-        target = self.goal if self.kind == "place" else np.r_[o.start[:2], o.start[2] + LIFT_HEIGHT["lift"]]
-        return {"goal_distance_m": round(float(np.linalg.norm(o.item - target)), 3),
+        target = self.goal if self.kind in {"place", "push"} else o.item + [0, 0, .03] if self.kind == "reach" else np.r_[o.start[:2], o.start[2] + LIFT_HEIGHT["lift"]]
+        return {"goal_distance_m": round(float(np.linalg.norm((o.gripper if self.kind == "reach" else o.item) - target)), 3),
                 "object_raised_m": round(float(o.item[2] - o.start[2]), 3),
                 "gripper_to_object_m": round(float(np.linalg.norm(o.gripper - o.item)), 3),
                 "contact": ("both fingers", "one finger", "none")[2 - o.contacts] if o.contacts <= 2 else "both fingers",

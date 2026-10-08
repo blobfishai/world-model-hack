@@ -301,3 +301,28 @@ test("verified rooms show gym badges, demo videos, and the hub catalog", async (
   await catalog.getByRole("button", { name: /Wash a mug/ }).click();
   await expect(page).toHaveURL(/room=5$/);
 });
+
+test("a full LingBot World 2 pool falls back to LingBot instead of giving up", async ({ page }) => {
+  const calls: string[] = [];
+  await mockWorld(page, calls);
+  const tokenModels: string[] = [];
+  // Registered after mockWorld, so it takes precedence: World 2 is out of capacity; LingBot answers 503 so no paid
+  // session ever starts in this test.
+  await page.route("**/api/reactor/token**", route => {
+    const model = new URL(route.request().url()).searchParams.get("model") ?? "";
+    tokenModels.push(model);
+    return model === "lingbot-world-2"
+      ? route.fulfill({ status: 429, json: { error: 'unexpected HTTP status 429 from create session: {"error":"no available capacity: no available servers to handle the request"}' } })
+      : route.fulfill({ status: 503, json: { error: "REACTOR_API_KEY is not set on the server" } });
+  });
+  await page.goto(`/world?w=${WORLD_ID}&room=root`);
+  const enter = page.getByRole("button", { name: "Enter Reactor world" });
+  test.skip(await enter.isDisabled(), "REACTOR_API_KEY is not configured for this dev server");
+  await enter.click();
+  await expect(page.getByRole("status").filter({ hasText: /LingBot World 2 is full — trying LingBot/ })).toBeVisible({ timeout: 20_000 });
+  await expect.poll(() => tokenModels.includes("lingbot"), { timeout: 20_000 }).toBe(true);
+  expect(tokenModels[0]).toBe("lingbot-world-2");
+  // LingBot's answer here is not a capacity error, so the stage reports it and stays explorable offline.
+  await expect(page.getByRole("alert").filter({ hasText: /REACTOR_API_KEY/ })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId("reactor-world-status")).toContainText("Offline preview");
+});

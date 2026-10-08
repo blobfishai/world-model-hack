@@ -135,3 +135,47 @@ def beginning_image(path: Path, t: float, destination: Path, duration: float) ->
     for leftover in destination.parent.glob(f"{destination.stem}.candidate-*.jpg"):
         leftover.unlink(missing_ok=True)
     return chosen
+
+
+def thumbnail(image: Path, destination: Path, width: int = 640) -> Path:
+    with Image.open(image) as picture:
+        picture.convert("RGB").resize((width, round(width * picture.height / picture.width)), Image.LANCZOS).save(destination, quality=88)
+    return destination
+
+
+def footage_candidates(primary_id: str, folder: Path, *, primary_count: int = 10, other_count: int = 2,
+                       root: Path | None = None) -> list[dict]:
+    """Sharp, well-lit frames across the start video and the other recordings in data/: candidate real places for rooms.
+
+    Each candidate is cropped for LingBot (1664×960) and has a small thumbnail for the planner.
+    """
+    folder.mkdir(parents=True, exist_ok=True)
+    candidates = []
+    for source in list_sources(root):
+        count = primary_count if source["id"] == primary_id else other_count
+        path, _ = resolve_source(source["id"], root)
+        duration = float(source["duration"])
+        start, end = min(1., duration / 4), max(min(1., duration / 4) + .5, duration - 1.)
+        for window in range(count):
+            center = start + (end - start) * (window + .5) / count
+            best = None
+            for offset in (-.3, .3):
+                moment = round(min(max(0., center + offset), max(0., duration - .1)), 2)
+                frame = folder / f"{source['id']}-{moment:.2f}.jpg"
+                if not frame.is_file():
+                    try:
+                        extract_frame(path, moment, frame)
+                    except (ValueError, OSError, subprocess.SubprocessError):
+                        continue
+                if luma(frame) < DARK_LUMA:
+                    continue
+                score = sharpness(frame)
+                if best is None or score > best[0]:
+                    best = (score, moment, frame)
+            if best is None:
+                continue
+            _, moment, frame = best
+            candidates.append({"index": len(candidates), "source_id": source["id"], "file": source["file"],
+                               "task_type": source.get("task_type"), "t": moment, "image": frame,
+                               "thumbnail": thumbnail(frame, frame.with_suffix(".thumb.jpg"))})
+    return candidates

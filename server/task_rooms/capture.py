@@ -9,12 +9,13 @@ from pathlib import Path
 class VideoCapture:
     """Encode received BGRA frames without blocking the native WebRTC callback."""
 
-    def __init__(self, path: Path, fps: float = 24) -> None:
+    def __init__(self, path: Path, fps: float = 24, *, preset: str = "veryfast", queue_frames: int = 64) -> None:
         self.path = path
         self.fps = fps
+        self.preset = preset
         self.frames = 0
         self.error: BaseException | None = None
-        self._queue: queue.Queue[tuple[bytes, int, int] | None] = queue.Queue(maxsize=64)
+        self._queue: queue.Queue[tuple[bytes, int, int] | None] = queue.Queue(maxsize=queue_frames)
         self._thread = threading.Thread(target=self._encode, name="reactor-video-capture", daemon=True)
         self._closed = False
         self._thread.start()
@@ -46,7 +47,7 @@ class VideoCapture:
                     process = subprocess.Popen(
                         ["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "bgra",
                          "-s", f"{width}x{height}", "-framerate", str(self.fps), "-i", "pipe:0",
-                         "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                         "-an", "-c:v", "libx264", "-preset", self.preset, "-crf", "20",
                          "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(self.path)],
                         stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=log,
                     )

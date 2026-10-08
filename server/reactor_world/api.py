@@ -22,13 +22,14 @@ from task_rooms.config import safe_error
 
 from dataclasses import asdict
 
-from . import robot_sim
+from . import lab, robot_sim
 from .jobs import WorldJobs
 from .tasks import program
 from .playground_export import ExportError
 from .schema import World, WorldRoom, WorldRoomSpec
 from .sources import ATTRIBUTION, extract_frame, list_sources, resolve_source
 from .store import WorldStore
+from .room_import import import_robot_room
 
 MEDIA = {"arrival": ("arrival.jpg", "image/jpeg"), "scan": ("scan.mp4", "video/mp4"),
          "storyboard": ("storyboard.jpg", "image/jpeg"), "preview": ("preview.png", "image/png"),
@@ -39,6 +40,10 @@ ROBOT_COMMANDS = {"move", "gripper", "reset", "demo", "stop"}
 class CreateWorld(StrictModel):
     source: str = Field(pattern=r"^[0-9]{1,6}$")
     t: float = Field(default=0, ge=0, le=3600)
+
+
+class ImportRobotRoom(StrictModel):
+    path: str = Field(pattern=r"^(root|[0-9](\.[0-9]){0,11})$")
 
 
 def require_key(name: str, purpose: str) -> None:
@@ -121,10 +126,29 @@ def install_reactor_world(app, sessions: dict, root: Path | None = None, origins
                 raise HTTPException(422, str(error)) from error
         return FileResponse(cache, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=3600"})
 
+    @router.get("/sources/{source_id}/video")
+    def source_video(source_id: str):
+        try:
+            path, _ = resolve_source(source_id)
+        except KeyError as error:
+            raise HTTPException(404, "Unknown source recording") from error
+        return FileResponse(path, media_type="video/mp4")
+
+    @router.get("/catalog")
+    def task_catalog():
+        return {**lab.catalog(store, room_view), "sources": list_sources(), "attribution": ATTRIBUTION}
+
     @router.get("")
     def worlds():
         return [{"id": w.id, "hub_title": w.hub_title, "status": w.status, "source": w.source.model_dump(),
                  "rooms": len(w.rooms), "created_at": w.created_at} for w in store.worlds()]
+
+    @router.post("/from-room")
+    def from_room(body: ImportRobotRoom):
+        try:
+            return world_view(import_robot_room(store, body.path))
+        except (ValueError, FileNotFoundError) as error:
+            raise HTTPException(422, str(error)) from error
 
     @router.post("", status_code=202)
     async def create(body: CreateWorld):
@@ -155,6 +179,11 @@ def install_reactor_world(app, sessions: dict, root: Path | None = None, origins
     async def physics(world_id: str, path: str):
         require_key("GOOGLE_API_KEY", "reconstruct room physics from the Reactor scan")
         return started(world_id, path, jobs.start_physics)
+
+    @router.post("/{world_id}/rooms/{path}/build", status_code=202)
+    async def build_task(world_id: str, path: str):
+        started(world_id, path, lambda w, p: lab.start_build(jobs, w, p))
+        return lab.build_status(store, world_id, path)
 
     @router.post("/{world_id}/rooms/{path}/playground", status_code=202)
     async def playground(world_id: str, path: str):

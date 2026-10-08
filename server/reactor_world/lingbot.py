@@ -129,7 +129,8 @@ async def run_scan(seed_image: Path, prompt: str, output: Path, script: list[Seg
     chunks: list[dict] = []
     segments: list[dict] = []
     reactor = Reactor(MODEL_NAME, required_key("REACTOR_API_KEY"), max_session_duration_seconds=int(timeout) + 30)
-    capture = VideoCapture(output, fps=FPS)
+    # 1664×960 @ 48 fps is ~300 MB/s of raw frames: encode fast and buffer ~3 s so a busy machine never drops frames.
+    capture = VideoCapture(output, fps=FPS, preset="ultrafast", queue_frames=144)
 
     def message(event: dict) -> None:
         name, data = event.get("type"), event.get("data") or {}

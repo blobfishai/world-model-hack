@@ -8,7 +8,7 @@ import { worldRequest, type World, type WorldPhysicsSession, type WorldRoom } fr
 
 const RoomViewer = dynamic(() => import("../rooms/RoomViewer").then(module => module.RoomViewer), { ssr: false });
 
-export function WorldPhysics({ world, room, onClose }: { world: World; room: WorldRoom; onClose: () => void }) {
+export function WorldPhysics({ world, room, socketBase, onClose }: { world: World; room: WorldRoom; socketBase: string; onClose: () => void }) {
   const [session, setSession] = useState<WorldPhysicsSession | null>(null);
   const [snapshot, setSnapshot] = useState<PhysicsState | null>(null);
   const [connected, setConnected] = useState(false);
@@ -29,8 +29,7 @@ export function WorldPhysics({ world, room, onClose }: { world: World; room: Wor
       id = value.id;
       if (!active) { void fetch(`/api/room-sessions/${id}`, { method: "DELETE" }).catch(() => {}); return; }
       stateRef.current = value.state; setSnapshot(value.state); setSession(value);
-      const base = process.env.NEXT_PUBLIC_ROOM_SIM_WS_URL ?? `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:8000`;
-      ws = new WebSocket(`${base}/sessions/${id}`);
+      ws = new WebSocket(`${socketBase}/sessions/${id}`);
       socketRef.current = ws;
       ws.onopen = () => { if (active) setConnected(true); };
       ws.onmessage = event => {
@@ -42,6 +41,7 @@ export function WorldPhysics({ world, room, onClose }: { world: World; room: Wor
         } else if (payload.error) setError(payload.error);
       };
       ws.onclose = () => { if (active) setConnected(false); };
+      ws.onerror = () => { if (active) setError("The physics connection failed. Close and reopen this simulation."); };
     }).catch(cause => { if (active) setError(cause instanceof Error ? cause.message : String(cause)); });
     return () => {
       active = false;
@@ -49,7 +49,7 @@ export function WorldPhysics({ world, room, onClose }: { world: World; room: Wor
       socketRef.current = null;
       if (id) void fetch(`/api/room-sessions/${id}`, { method: "DELETE" }).catch(() => {});
     };
-  }, [worldId, room.path, revision]);
+  }, [worldId, room.path, revision, socketBase]);
 
   useEffect(() => {
     const close = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };

@@ -2,7 +2,25 @@
 
 export const LINGBOT_COST_PER_SECOND = 0.007; // reactor/lingbot-world-2, from GET https://api.reactor.inc/pricing
 export const SANA_COST_PER_SECOND = 0.0017; // reactor/sana-streaming
-export const CAPACITY_RETRY_SECONDS = [10, 20, 40];
+
+/** The walkable world runs on LingBot World 2; LingBot (v1) is a separate GPU pool with the same controls. */
+export type WorldEngine = "world2" | "v1";
+export const ENGINES: Record<WorldEngine, { model: "lingbot-world-2" | "lingbot"; label: string; detail: string; costPerSecond: number }> = {
+  world2: { model: "lingbot-world-2", label: "LingBot World 2", detail: "1664×960 @ 48 fps", costPerSecond: 0.007 },
+  v1: { model: "lingbot", label: "LingBot", detail: "1664×960 @ 16 fps", costPerSecond: 0.005 },
+};
+
+/** Capacity shortages last minutes, so keep trying for about four minutes, alternating between the two pools. */
+export const CAPACITY_RETRY_SECONDS = [3, 5, 10, 15, 20, 30, 30, 45, 60];
+
+export function otherEngine(engine: WorldEngine): WorldEngine {
+  return engine === "world2" ? "v1" : "world2";
+}
+
+/** LingBot (v1) takes one movement axis: forward/back wins over strafing, as in most first-person controls. */
+export function combinedMovement(longitudinal: "idle" | "forward" | "back", lateral: "idle" | "strafe_left" | "strafe_right") {
+  return longitudinal !== "idle" ? longitudinal : lateral;
+}
 
 /** Reactor answers HTTP 429 when the model has no free capacity or the account's session quota is spent. */
 export function isCapacityError(message: string | null | undefined): boolean {

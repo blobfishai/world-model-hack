@@ -65,7 +65,9 @@ export function TaskPanel({ world, room, playgroundAvailable, robotState, onJob,
     <GymBadges room={room} />
 
     {room.task.objects.length > 0 && <section className="rw-section">
-      <span className="rw-eyebrow">REAL TASK — FROM THE BEGINNING IMAGE OF {world.source.file}</span>
+      <span className="rw-eyebrow">{room.footage
+        ? `REAL TASK — REAL PLACE FROM ${room.footage.file} AT ${room.footage.t.toFixed(1)} S`
+        : `REAL TASK — FROM THE BEGINNING IMAGE OF ${world.source.file}`}</span>
       <ul className="rw-objects">
         {room.task.objects.map(object => <li key={object.id}>
           <span>{object.label}</span><small>{object.kind} · {object.size.map(value => Math.round(value * 100)).join("×")} cm</small>

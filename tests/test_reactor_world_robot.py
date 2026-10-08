@@ -20,6 +20,26 @@ def lift_task():
     return WorldTask.model_validate(task.model_dump())
 
 
+@pytest.mark.parametrize("kind", ["reach", "push"])
+def test_reach_and_push_demos_solve_physical_tasks(kind):
+    task = sponge_task()
+    task.robot_task = RobotTask(kind=kind, object="sponge")
+    sim = RobotSim(counter_room(), WorldTask.model_validate(task.model_dump()), width=320, height=180)
+    try:
+        start = sim.observation().item.copy()
+        sim.command({"type": "demo"})
+        for _ in range(650):
+            sim.tick()
+            if sim.progress.success:
+                break
+        assert sim.progress.success, sim.state()
+        if kind == "push":
+            assert np.linalg.norm(sim.observation().item[:2] - start[:2]) >= .1
+            assert abs(sim.observation().item[2] - start[2]) < .025
+    finally:
+        sim.close()
+
+
 def test_task_programs_name_objects_and_order_the_steps():
     place = program(sponge_task())
     assert [s.kind for s in place] == ["reach", "grasp", "lift", "carry", "place", "release"]

@@ -36,6 +36,8 @@ export default function RobotWorld(props: {
     renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.domElement.tabIndex = 0;
+    renderer.domElement.dataset.roomPath = room.path;
+    renderer.domElement.style.objectFit = "cover";
     renderer.domElement.setAttribute("aria-label", "Playable robot world. W A S D walks, drag looks, arrow keys move the robot.");
     parent.appendChild(renderer.domElement); current.current.onCanvas(renderer.domElement);
     const scene = new THREE.Scene(); scene.background = new THREE.Color(theme.wall);
@@ -200,7 +202,10 @@ export default function RobotWorld(props: {
     const down = (event: PointerEvent) => { if (event.button !== 0) return; renderer.domElement.focus({ preventScroll: true }); renderer.domElement.setPointerCapture(event.pointerId); drag = { x: event.clientX, y: event.clientY, moved: false }; };
     const move = (event: PointerEvent) => {
       if (drag) { const dx = event.clientX - drag.x, dy = event.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true; yaw -= dx * .003; pitch = THREE.MathUtils.clamp(pitch - dy * .0025, -.85, .7); drag.x = event.clientX; drag.y = event.clientY; }
-      const bounds = renderer.domElement.getBoundingClientRect(); pointer.set((event.clientX - bounds.left) / bounds.width * 2 - 1, -(event.clientY - bounds.top) / bounds.height * 2 + 1);
+      const bounds = renderer.domElement.getBoundingClientRect();
+      const width = Math.max(bounds.width, bounds.height * 1280 / 704), height = width * 704 / 1280;
+      pointer.set((event.clientX - bounds.left + (width - bounds.width) / 2) / width * 2 - 1,
+        -(event.clientY - bounds.top + (height - bounds.height) / 2) / height * 2 + 1);
       raycaster.setFromCamera(pointer, camera); renderer.domElement.style.cursor = raycaster.intersectObjects(doors.map(d => d.mesh)).length ? "pointer" : "grab";
     };
     const up = () => { if (drag && !drag.moved) { raycaster.setFromCamera(pointer, camera); const hit = raycaster.intersectObjects(doors.map(d => d.mesh))[0]; if (hit) walkTarget = doors.find(d => d.mesh === hit.object) ?? null; } drag = null; };
@@ -209,7 +214,6 @@ export default function RobotWorld(props: {
     const blur = () => { keys.clear(); drag = null; walkTarget = null; };
     renderer.domElement.addEventListener("pointerdown", down); renderer.domElement.addEventListener("pointermove", move); renderer.domElement.addEventListener("pointerup", up); renderer.domElement.addEventListener("pointercancel", blur);
     window.addEventListener("keydown", keydown); window.addEventListener("keyup", keyup); window.addEventListener("blur", blur);
-    const resize = new ResizeObserver(() => { const bounds = parent.getBoundingClientRect(); camera.aspect = bounds.width / Math.max(1, bounds.height); camera.updateProjectionMatrix(); }); resize.observe(parent);
     const clock = new THREE.Clock(); let animation = 0;
     const animate = () => {
       animation = requestAnimationFrame(animate); const dt = Math.min(.05, clock.getDelta());
@@ -240,7 +244,7 @@ export default function RobotWorld(props: {
     };
     animate();
     return () => {
-      disposed = true; cancelAnimationFrame(animation); resize.disconnect(); current.current.onCanvas(null);
+      disposed = true; cancelAnimationFrame(animation); current.current.onCanvas(null);
       window.removeEventListener("keydown", keydown); window.removeEventListener("keyup", keyup); window.removeEventListener("blur", blur);
       renderer.domElement.removeEventListener("pointerdown", down); renderer.domElement.removeEventListener("pointermove", move); renderer.domElement.removeEventListener("pointerup", up); renderer.domElement.removeEventListener("pointercancel", blur);
       video.pause(); video.removeEventListener("loadeddata", showVideo); video.removeAttribute("src"); video.load();

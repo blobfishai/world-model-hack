@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LingbotStage } from "./LingbotStage";
 import { RobotStage } from "./RobotStage";
 import { SourcePicker } from "./SourcePicker";
+import { RoomGymStarter } from "./RoomGymStarter";
 import { TaskPanel, type JobKind } from "./TaskPanel";
 import { WorldPhysics } from "./WorldPhysics";
 import { anyJobActive, roomApi, roomTrail, validRoomPath, validWorldId, worldUrl } from "./lib/rooms";
@@ -17,8 +18,8 @@ function message(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause);
 }
 
-export default function WorldApp({ initialWorld, initialRoom, reactorConfigured }: {
-  initialWorld: string | null; initialRoom: string; reactorConfigured: boolean;
+export default function WorldApp({ initialWorld, initialRoom, initialFromRoom, initialView = "world", socketBase, reactorConfigured }: {
+  initialWorld: string | null; initialRoom: string; initialFromRoom: string | null; initialView?: "world" | "robot"; socketBase: string; reactorConfigured: boolean;
 }) {
   const [worldId, setWorldId] = useState<string | null>(initialWorld);
   const [world, setWorld] = useState<World | null>(null);
@@ -29,7 +30,7 @@ export default function WorldApp({ initialWorld, initialRoom, reactorConfigured 
   const [error, setError] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
   const [physicsOpen, setPhysicsOpen] = useState(false);
-  const [view, setView] = useState<"world" | "robot">("world");
+  const [view, setView] = useState<"world" | "robot">(initialView);
   const [robotStates, setRobotStates] = useState<Record<string, RobotState>>({});
   const worldIdRef = useRef(worldId);
   worldIdRef.current = worldId;
@@ -73,7 +74,7 @@ export default function WorldApp({ initialWorld, initialRoom, reactorConfigured 
       setWorldId(validWorldId(nextWorld) ? nextWorld : null);
       setRoomPath(validRoomPath(nextRoom) ? nextRoom : "root");
       setPhysicsOpen(false);
-      setView("world");
+      setView(params.get("view") === "robot" ? "robot" : "world");
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -110,6 +111,20 @@ export default function WorldApp({ initialWorld, initialRoom, reactorConfigured 
     }
   }, []);
 
+  const importRoom = useCallback(async (path: string) => {
+    setCreating(true); setError(null);
+    try {
+      const value = await worldRequest<World>("/from-room", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path }) });
+      setWorld(value); setWorldId(value.id); setRoomPath("root"); setView("robot"); setPanelOpen(true);
+      window.history.pushState(null, "", `${worldUrl(value.id, "root")}&view=robot`);
+      if (!value.rooms.root.physics?.valid) {
+        const updated = await worldRequest<WorldRoom>(roomApi(value.id, "root", "physics"), { method: "POST" });
+        setWorld(current => current?.id === value.id ? { ...current, rooms: { ...current.rooms, root: updated } } : current);
+      }
+    } catch (cause) { setError(message(cause)); throw cause; }
+    finally { setCreating(false); }
+  }, []);
+
   const mergeRoom = useCallback((updated: WorldRoom) => {
     setWorld(current => current ? { ...current, rooms: { ...current.rooms, [updated.path]: updated } } : current);
   }, []);
@@ -127,8 +142,14 @@ export default function WorldApp({ initialWorld, initialRoom, reactorConfigured 
       .then(mergeRoom).catch(cause => setError(message(cause)));
   }, [mergeRoom]);
 
-  const showWorld = useCallback(() => setView("world"), []);
-  const showRobot = useCallback(() => { setPhysicsOpen(false); setView("robot"); }, []);
+  const showWorld = useCallback(() => {
+    setView("world");
+    const next = new URL(window.location.href); next.searchParams.delete("view"); window.history.replaceState(null, "", next);
+  }, []);
+  const showRobot = useCallback(() => {
+    setPhysicsOpen(false); setView("robot");
+    const next = new URL(window.location.href); next.searchParams.set("view", "robot"); window.history.replaceState(null, "", next);
+  }, []);
   const recordRobotState = useCallback((path: string, state: RobotState) => {
     setRobotStates(current => ({ ...current, [path]: state }));
   }, []);
@@ -138,7 +159,8 @@ export default function WorldApp({ initialWorld, initialRoom, reactorConfigured 
 
   let body: React.ReactNode;
   if (!worldId) {
-    body = <SourcePicker data={sources} loadError={sourcesError} creating={creating} onCreate={create} />;
+    body = initialFromRoom !== null ? <RoomGymStarter path={initialFromRoom} creating={creating} onCreate={importRoom} />
+      : <SourcePicker data={sources} loadError={sourcesError} creating={creating} onCreate={create} />;
   } else if (!world) {
     body = <main className="rw-planning"><div>
       {error ? <><span className="rw-eyebrow">WORLD UNAVAILABLE</span><h1>That world could not be opened.</h1>
@@ -163,13 +185,13 @@ export default function WorldApp({ initialWorld, initialRoom, reactorConfigured 
       <div className={`rw-stage-area${robotView ? " rw-robot-mode" : ""}`}>
         <LingbotStage world={world} room={room} reactorConfigured={reactorConfigured} onNavigate={navigate} onRequestScan={requestScan}
           pip={robotView} inputEnabled={!robotView} onShowWorld={showWorld} />
-        {robotView && <RobotStage world={world} room={room} reactorConfigured={reactorConfigured}
+        {robotView && <RobotStage world={world} room={room} socketBase={socketBase} reactorConfigured={reactorConfigured}
           playgroundAvailable={sources?.playground_available ?? true} onJob={runJob} onState={recordRobotState} onExit={showWorld} />}
       </div>
       {panelOpen && <TaskPanel world={world} room={room} playgroundAvailable={sources?.playground_available ?? true}
         robotState={robotStates[room.path] ?? null} onJob={runJob} onInteract={() => setPhysicsOpen(true)} onOpenRobot={showRobot}
         onNavigate={navigate} onClose={() => setPanelOpen(false)} />}
-      {physicsOpen && room.physics && <WorldPhysics world={world} room={room} onClose={() => setPhysicsOpen(false)} />}
+      {physicsOpen && room.physics && <WorldPhysics world={world} room={room} socketBase={socketBase} onClose={() => setPhysicsOpen(false)} />}
     </div>;
   }
 
@@ -195,7 +217,7 @@ export default function WorldApp({ initialWorld, initialRoom, reactorConfigured 
         {room?.parent && world?.status === "ready" && <button className="rw-button" onClick={() => navigate(room.parent!)} aria-label="Return to parent room">← Back</button>}
         {world?.status === "ready" && <button className="rw-button" aria-pressed={panelOpen} onClick={() => setPanelOpen(value => !value)}>Task details</button>}
         {worldId && <button className="rw-button" onClick={startOver}>New world</button>}
-        <Link className="rw-link" href="/explore">Task explorer ↗</Link>
+        <Link className="rw-link" href="/lab">Task lab ↗</Link>
       </div>
     </header>
     {body}

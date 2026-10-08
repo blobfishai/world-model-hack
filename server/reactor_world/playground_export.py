@@ -253,9 +253,9 @@ def plan_layout(spec: WorldRoomSpec, task: WorldTask) -> Layout:
         raise ExportError(f"The reconstruction has no {robot.object}; rebuild physics so the task object is present")
     notes = []
     width, depth, height = target.size
-    if min(width, depth) > .12:
+    if robot.kind in {"lift", "place"} and min(width, depth) > .12:
         raise ExportError(f"The reconstructed {target.id} is {min(width, depth) * 100:.0f} cm across; too wide for the Panda gripper")
-    if min(width, depth) > GRASP:
+    if robot.kind in {"lift", "place"} and min(width, depth) > GRASP:
         scale = CLAMPED_GRASP / min(width, depth)
         width, depth = (width * scale, depth) if width <= depth else (width, depth * scale)
         notes.append(f"{target.id}'s narrow side was clamped to {CLAMPED_GRASP * 100:.0f} cm for the gripper")
@@ -288,6 +288,27 @@ def plan_layout(spec: WorldRoomSpec, task: WorldTask) -> Layout:
     spawn = ([*spawn_low, rest], [*spawn_high, rest])
     if robot.kind == "lift":
         goal = ([*spawn_low, rest + .2], [*spawn_high, rest + .35])
+    elif robot.kind == "reach":
+        goal = ([*spawn_low, rest + .03], [*spawn_high, rest + .03])
+    elif robot.kind == "push":
+        start = np.asarray(origin[:2])
+        candidates = []
+        for axis, sign in ((1, 1), (1, -1), (0, 1), (0, -1)):
+            point = start.copy()
+            point[axis] += sign * .18
+            corridor = [start + (point - start) * alpha for alpha in np.linspace(0, 1, 12)]
+            if all(np.all(p >= low + margin) and np.all(p <= high - margin)
+                   and .3 <= p[0] <= .75 and np.linalg.norm(p) < .8
+                   and clear_of(p, max(width, depth) / 2 + .01, boxes) for p in corridor):
+                candidates.append(point)
+        if not candidates:
+            raise ExportError(f"No clear 18 cm pushing path on {support.id}")
+        point = candidates[0]
+        # Small spawn randomization keeps every episode on the checked corridor.
+        spawn = ([round(origin[0] - .015, 4), round(origin[1] - .015, 4), rest],
+                 [round(origin[0] + .015, 4), round(origin[1] + .015, 4), rest])
+        goal = ([round(point[0] - .025, 4), round(point[1] - .025, 4), rest],
+                [round(point[0] + .025, 4), round(point[1] + .025, 4), rest])
     else:
         anchor = objects.get(robot.anchor or "")
         if anchor is None:
@@ -479,6 +500,7 @@ def build_bundle(spec: WorldRoomSpec, task: WorldTask, layout: Layout, destinati
         target = destination / name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(templates.render(template, values_))
+    shutil.copy2(Path(__file__).with_name("task_kernel.py"), destination / "room_envs" / "task_kernel.py")
     folder = destination / "references"
     folder.mkdir()
     for index, (path, role) in enumerate(references):
@@ -516,6 +538,7 @@ def export_room(store, world_id: str, path: str, progress: Callable[[str], None]
     references = [(world_folder / "start.jpg", "beginning_image"), (folder / "arrival.jpg", "reactor_arrival_frame"),
                   (folder / "scan.mp4", "reactor_lingbot_scan"), (folder / "storyboard.jpg", "reactor_scan_storyboard"),
                   (folder / "scan.json", "reactor_session_receipt"), (folder / "scene.json", "reconstructed_room"),
+                  (folder / "generation-receipt.json", "original_reactor_generation_receipt"),
                   (world_folder / "plan-response.json", "world_plan"),
                   (folder / "robot-demo.mp4", "scripted_demo_simulation"), (folder / "robot-demo-reactor.mp4", "scripted_demo_reactor_render")]
     shutil.rmtree(staging, ignore_errors=True)
@@ -553,14 +576,16 @@ def export_room(store, world_id: str, path: str, progress: Callable[[str], None]
             shutil.copy2(bundle / "preview.png", folder / "preview.png")
     scan = store.read_json(world_id, path, "scan.json") or {}
     write_manifest(bundle, {
-        "format": "world-model-hack/playground-bundle/1", "env_name": info["env_name"],
+        "format": "world-model-hack/playground-bundle/2", "env_name": info["env_name"],
         "created_at": datetime.now(timezone.utc).isoformat(),
         "playground": {"version": PLAYGROUND_VERSION, "base_env": "PandaPickCube", "default_impl": "jax",
                        "menagerie_commit": MENAGERIE_COMMIT},
         "robot": {"name": "franka_emika_panda", "source": "mujoco_menagerie mjx_panda.xml",
                   "base_in_room_frame": [round(float(v), 4) for v in layout.frame.base], "base_yaw_rad": round(layout.frame.yaw, 4),
                   "base_height_m": round(layout.frame.top, 4), "side_of_support": layout.side},
-        "task": {"title": room.task.title, "goal": room.task.goal, "robot_task": info["robot_task"],
+        "task": {"title": room.task.title, "goal": room.task.goal, "robot_task": info["robot_task"], "contract_version": 2,
+                 "reward": "ordered stage bonuses + completion bonus + phase shaping and action cost",
+                 "termination": "ordered success, invalid state, out of bounds, or 30 second wrapper limit",
                  "object": layout.target.id, "object_size_m": layout.size, "support": layout.support.id,
                  "spawn_low": layout.spawn[0], "spawn_high": layout.spawn[1],
                  "target_low": layout.goal[0], "target_high": layout.goal[1]},
@@ -574,7 +599,7 @@ def export_room(store, world_id: str, path: str, progress: Callable[[str], None]
             "Room geometry is a primitive approximation reconstructed by Gemini from a Reactor-generated (not captured) walkthrough; scale is estimated.",
             "Furniture is static and non-task objects are welded; doors and drawers stay closed.",
             "Following Playground's Panda models, only the hand capsule and finger pads collide; arm links pass through scenery.",
-            "No robot appears in the Reactor video. Policies trained here need evaluation before any hardware use.",
+            "Robot appearance in generated footage is not evidence of physical task success; evaluate policies in the simulator.",
         ]})
     archive = shutil.make_archive(str(staging / name), "zip", staging, name)
     Path(archive).replace(folder / "export.zip")

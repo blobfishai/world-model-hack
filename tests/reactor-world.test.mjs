@@ -110,7 +110,7 @@ test("bearings project into a 70° view and vanish outside it", () => {
 // --- Robot task simulation, Reactor render policy, and training-gym badges ---
 import { ROBOT_IDLE, contactLabel, coverRect, robotAxesFromKeys, robotTaskTitle, sameAxes, simulationPrompt, stepSummary,
   taskProgram } from "../app/world/lib/robot.ts";
-import { CAPACITY_RETRY_SECONDS, capacityRetryDelay, formatCost, isCapacityError } from "../app/world/lib/reactor.ts";
+import { CAPACITY_RETRY_SECONDS, ENGINES, capacityRetryDelay, combinedMovement, formatCost, isCapacityError, otherEngine } from "../app/world/lib/reactor.ts";
 import { gymCatalog, roomBadges } from "../app/world/lib/rooms.ts";
 
 const placeTask = {
@@ -172,8 +172,16 @@ test("only Reactor capacity and quota errors are retried, after 10, 20 and 40 se
   assert.ok(isCapacityError("Reactor needs a short break before starting another world. (429 RATE_LIMITED)"));
   assert.ok(!isCapacityError("REACTOR_API_KEY is not set on the server (503)"));
   assert.ok(!isCapacityError(null));
-  assert.deepEqual(CAPACITY_RETRY_SECONDS.map((_, attempt) => capacityRetryDelay(attempt)), [10, 20, 40]);
-  assert.equal(capacityRetryDelay(3), null);
+  assert.deepEqual(CAPACITY_RETRY_SECONDS.map((_, attempt) => capacityRetryDelay(attempt)), CAPACITY_RETRY_SECONDS);
+  assert.ok(CAPACITY_RETRY_SECONDS.reduce((sum, value) => sum + value, 0) >= 180, "retries span a few minutes");
+  assert.equal(capacityRetryDelay(CAPACITY_RETRY_SECONDS.length), null);
+  // A full LingBot World 2 pool falls back to LingBot (a separate pool) and back again.
+  assert.equal(otherEngine("world2"), "v1");
+  assert.equal(otherEngine("v1"), "world2");
+  assert.equal(ENGINES.v1.model, "lingbot");
+  assert.equal(combinedMovement("forward", "strafe_left"), "forward");
+  assert.equal(combinedMovement("idle", "strafe_right"), "strafe_right");
+  assert.equal(combinedMovement("idle", "idle"), "idle");
   assert.equal(formatCost(60, 0.0017), "$0.10");
 });
 

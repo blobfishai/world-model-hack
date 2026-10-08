@@ -32,6 +32,8 @@ export function robotTaskTitle(task: WorldTask): string | null {
   const robot = task.robot_task;
   if (!robot) return null;
   const item = label(task.objects, robot.object, "object");
+  if (robot.kind === "reach") return `Position the gripper over the ${item}`;
+  if (robot.kind === "push") return `Push the ${item} onto the goal`;
   if (robot.kind === "lift") return `Lift the ${item}`;
   return `Place the ${item} ${robot.relation ?? "beside"} the ${label(task.objects, robot.anchor, "target")}`;
 }
@@ -41,8 +43,12 @@ export function taskProgram(task: WorldTask): TaskStepView[] {
   const robot = task.robot_task;
   if (!robot) return [];
   const item = label(task.objects, robot.object, humanize(robot.object));
-  const steps: [string, TaskStepKind, string][] = [["reach", "reach", `Reach the ${item}`], ["grasp", "grasp", "Close both fingers on it"]];
-  if (robot.kind === "lift") {
+  let steps: [string, TaskStepKind, string][] = [["reach", "reach", `Reach the ${item}`], ["grasp", "grasp", "Close both fingers on it"]];
+  if (robot.kind === "reach") {
+    steps = [["reach", "reach", `Reach above the ${item}`], ["hold", "hold", "Hold the open gripper steady for a second"]];
+  } else if (robot.kind === "push") {
+    steps = [["reach", "reach", `Approach the ${item}`], ["contact", "contact", "Touch it with the fingers"], ["push", "push", "Push it along the surface to the goal"], ["settle", "settle", "Let it settle on the goal"]];
+  } else if (robot.kind === "lift") {
     steps.push(["lift", "lift", "Lift it 15 cm off the surface"], ["hold", "hold", "Hold it steady for a second"]);
   } else {
     const anchor = label(task.objects, robot.anchor, "target");

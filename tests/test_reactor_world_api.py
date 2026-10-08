@@ -12,7 +12,7 @@ from reactor_world import planner, playground_export
 from reactor_world.schema import PhysicsSummary
 from room_sim.api import create_app
 
-from reactor_world_fixtures import counter_room, hub_plan
+from reactor_world_fixtures import counter_room, footage_plan, hub_plan
 
 
 @pytest.fixture
@@ -32,6 +32,8 @@ def service(tmp_path, data_root, monkeypatch):
     monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
     calls = []
     monkeypatch.setattr(planner, "plan_hub", lambda image, task_type, raw_path: calls.append(image) or hub_plan())
+    monkeypatch.setattr(planner, "plan_footage_world",
+                        lambda image, task_type, candidates, raw_path: calls.append(image) or footage_plan())
     app = create_app(tmp_path / "rooms")
     with TestClient(app) as client:
         yield client, app, calls
@@ -55,6 +57,9 @@ def test_sources_frames_and_world_planning(service):
     frame = client.get("/worlds/sources/3/frame", params={"t": 1, "w": 160})
     assert frame.status_code == 200 and frame.headers["content-type"] == "image/jpeg"
     assert client.get("/worlds/sources/99/frame").status_code == 404
+    source_video = client.get("/worlds/sources/3/video", headers={"Range": "bytes=0-1023"})
+    assert source_video.status_code == 206 and len(source_video.content) == 1024
+    assert client.get("/worlds/sources/99/video").status_code == 404
     assert client.post("/worlds", json={"source": "3", "t": 30}).status_code == 422
     created = client.post("/worlds", json={"source": "3", "t": 0})
     assert created.status_code == 202
@@ -62,12 +67,18 @@ def test_sources_frames_and_world_planning(service):
     assert world["status"] == "ready" and len(calls) == 1
     assert sorted(world["rooms"]) == ["0", "1", "2", "3", "4", "5", "root"]
     assert world["start_url"].startswith(f"/api/worlds/{world['id']}/rooms/root/media/start")
-    assert world["rooms"]["root"]["media"]["arrival"] and world["rooms"]["0"]["media"]["arrival"] is None
+    # Rooms are real footage frames: each is enterable at once, with its provenance.
+    assert world["rooms"]["root"]["media"]["arrival"] and world["rooms"]["0"]["media"]["arrival"]
+    assert world["rooms"]["0"]["footage"]["source_id"] == "3" and world["rooms"]["1"]["camera_pitch_hint"] == "down"
     assert world["source"]["sha256"] and world["rooms"]["0"]["jobs"]["scan"]["status"] == "idle"
     assert client.get(world["start_url"].removeprefix("/api")).headers["content-type"] == "image/jpeg"
     # The same start video and time reuse the existing world.
     assert client.post("/worlds", json={"source": "3", "t": 0}).json()["id"] == world["id"] and len(calls) == 1
     assert client.get("/worlds").json()[0]["id"] == world["id"]
+    catalog = client.get("/worlds/catalog").json()
+    assert len(catalog["tasks"]) == 7 and len(catalog["sources"]) == 1
+    assert catalog["task_contract"] == 2
+    assert not any(task["training_ready"] for task in catalog["tasks"])
 
 
 def test_jobs_check_keys_paths_and_order(service, monkeypatch):

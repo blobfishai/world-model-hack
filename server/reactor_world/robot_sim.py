@@ -187,6 +187,25 @@ class RobotSim:
         gripper = self.data.site_xpos[self.site].copy()
         safe = max(item[2] + height / 2 + .08, .22)
         grasp = item + [0, 0, min(.02, height / 4)]
+        if self.kind == "reach":
+            above = item + [0, 0, .03]
+            return [Phase("rise", np.r_[gripper[:2], max(safe, gripper[2])], False, 40),
+                    Phase("approach", np.r_[item[:2], safe], False, 90, .004),
+                    Phase("align", above, False, 100, .005, speed=.08), Phase("hold", above, False, 50, None)]
+        if self.kind == "push":
+            goal = self.progress.goal.copy()
+            direction = goal[:2] - item[:2]
+            direction /= max(np.linalg.norm(direction), 1e-6)
+            offset = max(self.layout.size[:2]) / 2 + .035
+            behind = item - np.r_[direction * offset, 0]
+            contact = item - np.r_[direction * (offset - .025), 0]
+            end = goal - np.r_[direction * (offset - .04), 0]
+            return [Phase("rise", np.r_[gripper[:2], max(safe, gripper[2])], True, 40),
+                    Phase("approach", np.r_[behind[:2], safe], True, 100, .005),
+                    Phase("descend", behind, True, 100, .005, speed=.08),
+                    Phase("contact", contact, True, 55, .004, speed=.05),
+                    Phase("push", end, True, 180, .008, speed=.06),
+                    Phase("retreat", end + [0, 0, .1], True, 70, speed=.1), Phase("settle", end + [0, 0, .1], True, 50, None)]
         phases = [Phase("rise", np.r_[gripper[:2], max(safe, gripper[2])], False, 40),
                   Phase("approach", np.r_[item[:2], safe], False, 90, .004, settle=8),
                   Phase("descend", grasp, False, 90, .005, speed=.08, settle=5),
@@ -300,7 +319,9 @@ def demo_prompt(room, task: WorldTask) -> str:
     robot = task.robot_task
     labels = {o.id: o.label for o in task.objects}
     item = labels.get(robot.object, robot.object.replace("_", " "))
-    action = (f"picks up the {item} and lifts it" if robot.kind == "lift" else
+    action = (f"holds its open gripper just above the {item}" if robot.kind == "reach" else
+              f"pushes the {item} along the work surface to the goal" if robot.kind == "push" else
+              f"picks up the {item} and lifts it" if robot.kind == "lift" else
               f"picks up the {item} and sets it down {robot.relation or 'beside'} the "
               f"{labels.get(robot.anchor or '', (robot.anchor or 'target').replace('_', ' '))}")
     return (f"Photorealistic footage of this room: {room.prompt[:520]} A white Franka Emika Panda robot arm on a dark "
